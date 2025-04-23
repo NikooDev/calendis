@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "730006798062",
+    "project_id": "pompiers-tiffauges",
+    "storage_bucket": "pompiers-tiffauges.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:730006798062:android:ea988a3191b07c15b5bdff",
+        "android_client_info": {
+          "package_name": "com.calendis"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHu-_B3fiVwYBG2OxIXoAkodrtKeRM1Qg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
