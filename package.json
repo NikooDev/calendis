@@ -6,8 +6,8 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "start": "react-native start",
-    "test": "jest",
-    "postversion": "react-native-version"
+    "postversion": "react-native-version",
+    "test": "jest"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.1.2",
