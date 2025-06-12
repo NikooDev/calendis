@@ -8,6 +8,8 @@ import { twMerge } from 'tailwind-merge';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Text from '@Calendis/components/ui/text';
+import { haptic } from '@Calendis/utils/functions';
+import { HapticFeedbackTypes } from 'react-native-haptic-feedback';
 
 const AnimatedIcon = Animated.createAnimatedComponent(Icon);
 
@@ -43,6 +45,7 @@ const Tabs = (props: BottomTabBarProps) => {
 		if (!isFocused && !event.defaultPrevented) {
 			clearTimeout(timer);
 
+			haptic(HapticFeedbackTypes.impactLight);
 			navigation.navigate(routeName, { screen: screenName });
 		}
 	}

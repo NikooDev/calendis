@@ -19,6 +19,7 @@ import { Easing } from 'react-native-reanimated';
 import { login } from '@Calendis/actions/auth.actions';
 import { setLoginError, setLoginSuccess } from '@Calendis/store/reducers/auth.reducer';
 import { useDispatch } from 'react-redux';
+import { shadowText } from '@Calendis/assets/theme';
 
 const LoginScreen = ({ navigation }: RootStackPropsGuest<'Login'>) => {
 	const [user, setUser] = useState({email: '', password: '', recover: ''});
@@ -33,6 +34,10 @@ const LoginScreen = ({ navigation }: RootStackPropsGuest<'Login'>) => {
 	const recoverRef = useRef<React.ComponentRef<typeof BottomSheetTextInput>>(null);
 
 	const bottomSheetRef = useRef<BottomSheet>(null);
+
+	useEffect(() => {
+		setTimeout(() => emailRef.current && emailRef.current.focus(), 600);
+	}, [emailRef.current]);
 
 	useEffect(() => {
 		if (user.email.length > 0 && user.password.length > 0) {
@@ -146,12 +151,12 @@ const LoginScreen = ({ navigation }: RootStackPropsGuest<'Login'>) => {
 											className="mt-4 ml-0"/>
 						</View>
 						<View className="ml-16">
-							<Text size={60} light className="font-title">Calendis</Text>
-							<Text size={24} light className="font-title -mt-2 ml-0.5">Connexion</Text>
+							<Text size={60} light className="font-title" style={shadowText}>Calendis</Text>
+							<Text size={24} light className="font-title -mt-2 ml-0.5" style={shadowText}>Connexion</Text>
 						</View>
 					</View>
-					<View className="px-4">
-						<View className={twMerge('bg-[#0000003f] border-[#0000001f] rounded-2xl border mb-3', focus.email && 'bg-[#0000005f] border-[#0000005f]')}>
+					<View>
+						<View className={twMerge('bg-[#0000003f] border-[#0000001f] rounded-2xl border mb-3', focus.email && 'bg-[#0000005f] border-[#0000001f]')}>
 							<TextInput ref={emailRef}
 												 keyboardType="email-address"
 												 placeholder="Adresse e-mail"
@@ -162,14 +167,14 @@ const LoginScreen = ({ navigation }: RootStackPropsGuest<'Login'>) => {
 												 autoCapitalize="none"
 												 autoCorrect={false}
 												 spellCheck={false}
-												 className="font-text-regular text-[17px] px-4 text-white h-14"
+												 className="font-text-regular text-[17px] px-4 text-white h-16"
 												 style={{lineHeight: 0}}
 												 onFocus={() => handleFocus('email')}
 												 onBlur={handleBlur}
 												 onSubmitEditing={handleNext}
 												 onChangeText={(value) => handleChange('email', value)}/>
 						</View>
-						<View className={twMerge('bg-[#0000003f] border-[#0000001f] rounded-2xl border mb-3', focus.password && 'bg-[#0000005f] border-[#0000005f]')}>
+						<View className={twMerge('bg-[#0000003f] border-[#0000001f] rounded-2xl border mb-3', focus.password && 'bg-[#0000005f] border-[#0000001f]')}>
 							<TextInput ref={passwordRef}
 												 keyboardType="default"
 												 placeholder="Mot de passe"
@@ -179,7 +184,7 @@ const LoginScreen = ({ navigation }: RootStackPropsGuest<'Login'>) => {
 												 textAlignVertical="center"
 												 secureTextEntry={true}
 												 autoCorrect={false}
-												 className="font-text-regular text-[17px] px-4 text-white h-14"
+												 className="font-text-regular text-[17px] px-4 text-white h-16"
 												 style={{lineHeight: 0}}
 												 onFocus={() => handleFocus('password')}
 												 onBlur={handleBlur}
@@ -224,7 +229,7 @@ const LoginScreen = ({ navigation }: RootStackPropsGuest<'Login'>) => {
 																	autoCapitalize="none"
 																	autoCorrect={false}
 																	spellCheck={false}
-																	className="bg-slate-500 flex-1 rounded-2xl font-text-regular text-[17px] px-4 text-white h-14"
+																	className="bg-slate-700 flex-1 rounded-2xl font-text-regular text-[17px] px-4 text-white h-14"
 																	style={{lineHeight: 0}}
 																	onSubmitEditing={handleRecover}
 																	onChangeText={(value) => handleChange('recover', value)}/>

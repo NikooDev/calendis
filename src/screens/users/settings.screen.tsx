@@ -1,10 +1,10 @@
 import React from 'react';
-import { Pressable } from 'react-native';
-import Text from '@Calendis/components/ui/text';
-import useAuth from '@Calendis/hooks/useAuth';
 import ScreenLayout from '@Calendis/components/layouts/screen.layout';
+import Text from '@Calendis/components/ui/text';
+import { Pressable } from 'react-native';
+import useAuth from '@Calendis/hooks/useAuth';
 
-const HomeScreen = () => {
+const SettingsScreen = () => {
 	const { logout } = useAuth();
 
 	return (
@@ -14,4 +14,4 @@ const HomeScreen = () => {
 	);
 };
 
-export default HomeScreen;
+export default SettingsScreen;

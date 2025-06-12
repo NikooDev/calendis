@@ -5,6 +5,7 @@ import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
 import Gradient from '@Calendis/components/ui/gradient';
 import Text from '@Calendis/components/ui/text';
 import { AuthEnum } from '@Calendis/types/auth';
+import { shadowText } from '@Calendis/assets/theme';
 
 export const loaderTimeout = 800;
 
@@ -41,7 +42,7 @@ const Loader: React.FC<{ loading: boolean }> = ({ loading }) => {
 			<StatusBar barStyle="light-content" animated/>
 			<Gradient/>
 			<View className="-mt-14">
-				<Text size={60} light className="font-title text-center mb-4">Calendis</Text>
+				<Text size={60} light className="font-title text-center mb-4" style={shadowText}>Calendis</Text>
 				<ActivityIndicator size="large" color="#fff"/>
 			</View>
 		</Animated.View>

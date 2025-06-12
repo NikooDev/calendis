@@ -14,11 +14,11 @@ interface RootStackUserTypeParams {
 }
 
 export type RootStackUserType = {
-	Home: RootStackUserTypeParams;
+	Round: RootStackUserTypeParams;
 	Message: RootStackUserTypeParams;
 	Maps: RootStackUserTypeParams;
 	Profile: RootStackUserTypeParams;
-	Menu: RootStackUserTypeParams;
+	Settings: RootStackUserTypeParams;
 }
 
 export type RootStackParamList<T> = T;

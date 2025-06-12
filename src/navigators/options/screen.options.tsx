@@ -4,10 +4,10 @@ import Header from '@Calendis/components/navigator/header';
 import Tabs from '@Calendis/components/navigator/tabs';
 
 export const title = {
-	home: 'Calendis',
-	message: 'Message',
+	round: 'Tournée',
+	message: 'Messages',
 	maps: 'Maps',
-	menu: 'Menu',
+	settings: 'Paramètres',
 	profile: 'Profil',
 }
 

@@ -14,9 +14,9 @@ const UseBottomTabs = () => {
 		let icon: string, title: string;
 
 		switch (route.name) {
-			case 'Home':
-				icon = 'home';
-				title = 'Accueil';
+			case 'Round':
+				icon = 'footsteps';
+				title = 'Tournée';
 				break;
 			case 'Message':
 				icon = 'chatbubble-ellipses';
@@ -30,9 +30,9 @@ const UseBottomTabs = () => {
 				icon = 'person';
 				title = 'Profil';
 				break;
-			case 'Menu':
-				icon = 'menu';
-				title = 'Menu';
+			case 'Settings':
+				icon = 'settings';
+				title = 'Paramètres';
 				break;
 			default:
 				icon = 'help';

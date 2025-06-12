@@ -25,3 +25,13 @@ export const shadow = (elevation: number, direction: 'top' | 'center') => {
 		elevation: elevation
 	}
 }
+
+export const shadowText = {
+	textShadowColor: '#0000008f',
+	textShadowOffset: {
+		width: 1,
+		height: 0
+	},
+	textShadowOpacity: 1,
+	textShadowRadius: 5
+}
