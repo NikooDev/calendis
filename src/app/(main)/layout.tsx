@@ -5,7 +5,7 @@ import type { IChildren } from '@Calendis/types/app';
 const MainLayout = ({ children }: IChildren) => {
 	return (
 		<>
-			<UAStyles isAdmin={true}/>
+			<UAStyles isAdmin={false}/>
 			{ children }
 		</>
 	);
