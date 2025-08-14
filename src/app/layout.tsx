@@ -5,6 +5,8 @@ import { ysabeauSC, raleway } from '@Calendis/utils/fonts.util';
 import { twMerge } from 'tailwind-merge';
 import '@Calendis/assets/theme/globals.css';
 import StoreProvider from '@Calendis/components/layout/store';
+import { useServerInsertedHTML } from 'next/navigation';
+import Styles from '@Calendis/components/layout/styles';
 
 export const metadata: Metadata = {
 	title: 'Calendis',
@@ -29,9 +31,7 @@ const rootLayout = ({ children }: Readonly<IChildren>) => {
 	return (
 		<html lang="fr">
 			<body className={twMerge(ysabeauSC.variable, raleway.variable)}>
-				<style>
-					{`:where(h1) {margin-block: 0.67em;font-size: 2em;}`}
-				</style>
+				<Styles/>
 				<StoreProvider>
 					{ children }
 				</StoreProvider>
