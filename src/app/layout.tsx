@@ -31,7 +31,6 @@ const rootLayout = ({ children }: Readonly<IChildren>) => {
 	return (
 		<html lang="fr">
 			<body className={twMerge(ysabeauSC.variable, raleway.variable)}>
-				<Styles/>
 				<StoreProvider>
 					{ children }
 				</StoreProvider>
