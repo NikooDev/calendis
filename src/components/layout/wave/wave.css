@@ -1,4 +1,4 @@
-@reference "./../../assets/theme/globals.css";
+@reference "./../../../assets/theme/globals.css";
 
 @layer components {
 	.wave {
