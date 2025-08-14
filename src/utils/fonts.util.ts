@@ -3,6 +3,7 @@ import localFont from 'next/font/local';
 export const ysabeauSC = localFont({
 	src: './../assets/fonts/YsabeauSC.ttf',
 	variable: '--font-title',
+	preload: true,
 	display: 'swap'
 });
 
@@ -18,5 +19,6 @@ export const raleway = localFont({
 		},
 	],
 	variable: '--font-default',
+	preload: true,
 	display: 'swap'
 });

@@ -1,0 +1,33 @@
+@reference "./../../assets/theme/globals.css";
+
+@layer components {
+	.wave {
+		@apply w-full bottom-0 fixed z-30 pointer-events-none select-none;
+		animation: waveIn .6s cubic-bezier(0, 0.55, 0.45, 1) .5s both;
+	}
+
+	.wave svg {
+		@apply absolute w-full bottom-0 left-0;
+	}
+
+	.wave .wave-wrapper {
+		@apply w-full h-[250px] absolute -top-[250px];
+	}
+
+	.wave .wave-master {
+		@apply absolute bottom-0 left-0 w-full h-full z-20;
+		clip-path: url(#wave-clip);
+		backdrop-filter: blur(5px);
+		background: linear-gradient(to right, rgba(21, 35, 104, .3), rgba(20, 99, 255, 0.3));
+	}
+
+	.wave .wave-bg {
+		backdrop-filter: blur(5px);
+		background: linear-gradient(to right, rgba(21, 35, 104, .3), rgba(20, 99, 255, 0.3));
+	}
+}
+
+@keyframes waveIn {
+	from { transform: translateY(250px); }
+	to   { transform: translateY(0); }
+}

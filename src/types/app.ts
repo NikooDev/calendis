@@ -7,3 +7,12 @@ export interface IChildren {
 export interface IUAStyles {
 	isAdmin: boolean;
 }
+
+export interface IAppState {
+	online: NetworkEnum;
+}
+
+export enum NetworkEnum {
+	ONLINE = 'ONLINE',
+	OFFLINE = 'OFFLINE'
+}

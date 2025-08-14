@@ -1,0 +1,32 @@
+.slidein {
+	opacity: 0;
+	transform: none;
+	filter: none;
+	will-change: transform;
+	contain: paint;
+}
+
+.slidein.armed {
+	opacity: var(--init-opacity, 0);
+	transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(.985);
+	filter: blur(8px);
+}
+
+.slidein.armed.ready {
+	transition:
+			opacity var(--duration, 350ms) ease-out var(--delay, 0ms),
+			transform var(--duration, 350ms) ease-out var(--delay, 0ms),
+			filter var(--duration, 350ms) ease-out var(--delay, 0ms);
+	opacity: 1;
+	transform: none;
+	filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.slidein, .slidein.armed, .slidein.armed.ready {
+		opacity: 1;
+		transform: none;
+		filter: none;
+		transition: none;
+	}
+}

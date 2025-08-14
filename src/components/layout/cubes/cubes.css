@@ -1,0 +1,38 @@
+@reference "./../../assets/theme/globals.css";
+
+@layer components {
+	.cubes {
+		@apply absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none select-none;
+	}
+
+	.cube {
+		@apply absolute -bottom-[9.375rem];
+	}
+
+	.cube:nth-child(1)  { @apply left-[30%]  w-20 h-20; }
+	.cube:nth-child(2)  { @apply left-[10%]  w-5  h-5;  }
+	.cube:nth-child(3)  { @apply left-[70%]  w-5  h-5;  }
+	.cube:nth-child(4)  { @apply left-[40%]  w-16 h-16; }
+	.cube:nth-child(5)  { @apply left-[65%]  w-5  h-5;  }
+	.cube:nth-child(6)  { @apply left-[75%]  w-28 h-28; }
+	.cube:nth-child(7)  { @apply left-[35%]  w-36 h-36; }
+	.cube:nth-child(8)  { @apply left-1/2    w-6  h-6;  }
+	.cube:nth-child(9)  { @apply left-[20%]  w-4  h-4;  }
+	.cube:nth-child(10) { @apply left-[85%]  w-36 h-36; }
+}
+
+@keyframes animate {
+	0%{
+		transform: translateY(0) rotate(0deg);
+		background-color: #e60076;
+		opacity: 1;
+		border-radius: 10%;
+	}
+
+	100%{
+		transform: translateY(-1000px) rotate(720deg);
+		background-color: #3131c3;
+		opacity: 0;
+		border-radius: 50%;
+	}
+}
