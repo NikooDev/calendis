@@ -1,8 +1,10 @@
 import React from 'react';
 
 /**
- * Fix
- * @constructor
+ * Fix UA styles title h1 :
+ * A <h1> was found inside an <article>,
+ * <aside>, <nav>, or <section> element that does not have an explicit font size set.
+ * The font size for such headings will be changed in this browser soon.
  */
 const Styles = () => {
 	// @ts-ignore
