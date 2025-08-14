@@ -1,10 +1,11 @@
 import React from 'react';
+import Home from '@Calendis/components/pages/home';
 
 const Page = () => {
 	return (
-		<section>
-			<h1 className="font-title font-black leading-none">coucou</h1>
-		</section>
+		<>
+			<Home/>
+		</>
 	);
 };
 
