@@ -3,10 +3,8 @@ import type { Metadata } from 'next';
 import type { IChildren } from '@Calendis/types/app';
 import { ysabeauSC, raleway } from '@Calendis/utils/fonts.util';
 import { twMerge } from 'tailwind-merge';
-import '@Calendis/assets/theme/globals.css';
 import StoreProvider from '@Calendis/components/layout/store';
-import { useServerInsertedHTML } from 'next/navigation';
-import Styles from '@Calendis/components/layout/styles';
+import '@Calendis/assets/theme/globals.css';
 
 export const metadata: Metadata = {
 	title: 'Calendis',
