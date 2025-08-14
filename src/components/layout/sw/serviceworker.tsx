@@ -36,7 +36,7 @@ const Serviceworker = () => {
 			const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
 			try {
 				reg = await navigator.serviceWorker.register(`/static/sw/sw.js?${encodeURIComponent(version)}`, {
-					scope: '/',
+					scope: '/static/sw/',
 					updateViaCache: 'none',
 				});
 			} catch {

@@ -20,10 +20,8 @@ const ASSETS = [
  */
 sw.addEventListener('install', (event) => {
 	event.waitUntil((async () => {
-		if ('navigationPreload' in sw.registration) {
-			await sw.registration.navigationPreload.enable();
-		}
 		const cache = await caches.open(APP_CACHE);
+
 		try {
 			if (ASSETS.length) await cache.addAll(ASSETS);
 		} catch { /* ignore */ }
@@ -41,6 +39,10 @@ sw.addEventListener('install', (event) => {
  */
 sw.addEventListener('activate', (event) => {
 	event.waitUntil((async () => {
+		if ('navigationPreload' in sw.registration) {
+			await sw.registration.navigationPreload.enable();
+		}
+
 		const keys = await caches.keys();
 
 		await Promise.all(
