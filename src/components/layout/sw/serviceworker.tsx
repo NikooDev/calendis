@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import Update from '@Calendis/components/layout/sw/update';
-import { FLAG } from '@Calendis/utils/constants.util';
+import { FLAG, toastSuccessStyle } from '@Calendis/utils/constants.util';
 
 const Serviceworker = () => {
 	const lastShownUrlRef = useRef<string | null>(null);
@@ -12,7 +12,7 @@ const Serviceworker = () => {
 		if (typeof window === 'undefined') return;
 		if (sessionStorage.getItem(FLAG)) {
 			sessionStorage.removeItem(FLAG);
-			toast.success('Mise à jour installée.', { duration: 5000 });
+			toast.success('Mise à jour installée.', { duration: 5000, style: toastSuccessStyle });
 		}
 	}, []);
 
