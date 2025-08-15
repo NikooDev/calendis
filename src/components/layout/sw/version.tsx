@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { extractVersionFromScriptURL } from '@Calendis/utils/functions.util';
 
 const BUILD_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
 
