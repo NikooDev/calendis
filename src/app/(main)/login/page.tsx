@@ -4,7 +4,6 @@ import Login from '@Calendis/components/pages/login';
 import SlideIn from '@Calendis/components/animations/slidein';
 
 const Page = () => {
-
 	return (
 		<section className="flex justify-center items-center h-dvh w-full bg-theme-700">
 			<div className="relative px-4 w-full sm:max-w-[500px] z-30 pb-28 lg:pb-0">
