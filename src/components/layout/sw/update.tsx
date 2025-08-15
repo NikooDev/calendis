@@ -7,15 +7,26 @@ import toast from 'react-hot-toast';
 const Update = ({ waiting, toastId }: ISWUpdate) => {
 	const [loading, setLoading] = useState(false);
 
-	const done = () => {
-		sessionStorage.setItem(FLAG, '1');
-		toast.dismiss(toastId);
-		location.reload();
-	};
-
 	const onClick = () => {
 		if (!waiting) return;
 		setLoading(true);
+
+		const start = performance.now();
+		let settled = false;
+
+		const done = () => {
+			if (settled) return;
+			settled = true;
+
+			const elapsed = performance.now() - start;
+			const wait = Math.max(0, 3000 - elapsed);
+
+			setTimeout(() => {
+				sessionStorage.setItem(FLAG, '1');
+				toast.dismiss(toastId);
+				location.reload();
+			}, wait);
+		};
 
 		navigator.serviceWorker.addEventListener('controllerchange', done, { once: true });
 

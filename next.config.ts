@@ -1,7 +1,13 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
+import fs from 'node:fs';
+
+const { version } = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
 const nextConfig: NextConfig = {
 	distDir: 'dist',
+	env: {
+		NEXT_PUBLIC_APP_VERSION: version,
+	},
 	async headers() {
 		return [
 			{

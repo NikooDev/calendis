@@ -1,38 +1,17 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 import { BackIcon, LockIcon } from '@Calendis/components/ui/icons';
 import Link from 'next/link';
+import Version from '@Calendis/components/layout/sw/version';
 
 const Footer = () => {
-	const [version, setVersion] = useState<string | null>(null);
-
 	const pathname = usePathname();
+	const year = new Date().getFullYear();
 	const isHome = pathname === '/';
 	const isLogin = pathname === '/login';
-
-	const handleVersion = useCallback( async () => {
-		if (!('serviceWorker' in navigator)) return;
-		const ctrl = navigator.serviceWorker.controller;
-		if (!ctrl) {
-			setVersion(process.env.NEXT_PUBLIC_APP_VERSION ?? null);
-			return;
-		}
-
-		const channel = new MessageChannel();
-		channel.port1.onmessage = (e) => setVersion(e.data?.version ?? null);
-		ctrl.postMessage({ type: 'GET_VERSION' }, [channel.port2]);
-	}, [])
-
-	useEffect(() => {
-		void handleVersion()
-	}, [handleVersion]);
-
-	const getYear = () => {
-		return new Date().getFullYear();
-	}
 
 	return (
 		<footer className="absolute z-40 bottom-0 left-0 right-0 overflow-hidden w-full">
@@ -62,9 +41,11 @@ const Footer = () => {
 					</Link>
 				</div>
 				<div className={twMerge('flex items-center ml-auto pr-4', (!isHome && !isLogin) && 'pb-2.5')}>
-					<p className="font-semibold text-white">Calendis © { getYear() }</p>
+					<p className="font-semibold text-white">Calendis © { year }</p>
 					<p className="mx-1 text-white">•</p>
-					<p className="font-semibold text-white">Version { version ? version : '0.0.0' }</p>
+					<p className="font-semibold text-white">
+						Version <Version/>
+					</p>
 				</div>
 			</div>
 		</footer>
