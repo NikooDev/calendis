@@ -8,9 +8,9 @@ const Page = () => {
 		<section className="h-dvh w-full bg-theme-700">
 			<div className="container mx-auto justify-around flex items-center h-full px-4 z-30 relative pb-10">
 				<div className="flex justify-center pb-20 flex-col items-center lg:items-start lg:flex-row">
-					<div className="self-start flex mx-auto w-[150px] h-[150px] box-shadow select-none">
-						<SlideIn trigger="mount" delay={100} direction="bottom">
-							<Image src="/static/img/logo.webp" width={150} height={150} loading="lazy" className="rounded-full" alt="logo"/>
+					<div className="self-start flex mx-auto">
+						<SlideIn trigger="mount" delay={100} direction="bottom" className="w-[150px] h-[150px] rounded-full box-shadow">
+							<Image src="/static/img/logo.webp" width={150} height={150} loading="lazy" className="select-none" alt="logo"/>
 						</SlideIn>
 					</div>
 					<div className="flex flex-col items-center lg:items-start lg:ml-10 mt-4 lg:mt-0 z-10">
@@ -41,14 +41,14 @@ const Page = () => {
 					</div>
 				</div>
 				<div className="relative z-50 hidden lg:flex">
-					<SlideIn trigger="image" delay={400} direction="right">
-						<div className="relative w-[320px] h-[700px] box-shadow select-none">
-							<Image src="/static/img/mobile.webp" alt="Mobile" className="rounded-3xl object-cover w-auto h-auto" sizes="(min-width:1024px) 300px, 0px" quality={75} fill priority/>
+					<SlideIn trigger="image" delay={400} direction="right" className="rounded-3xl box-shadow">
+						<div className="relative w-[320px] h-[700px]">
+							<Image src="/static/img/mobile.webp" alt="Mobile" className="object-cover select-none" sizes="(min-width:1024px) 300px, 0px" quality={75} fill priority/>
 						</div>
 					</SlideIn>
-					<SlideIn trigger="image" delay={700} direction="right" className="absolute -bottom-10 -right-10 w-[200px] h-[432.8px]">
-						<div className="relative w-[200px] h-[433px] box-shadow select-none">
-							<Image src="/static/img/mobileDashboard.webp" alt="Mobile" className="rounded-3xl object-cover" sizes="(min-width:1024px) 200px, 0px" loading="lazy" quality={75} fill/>
+					<SlideIn trigger="image" delay={700} direction="right" className="absolute -bottom-10 -right-10 rounded-3xl box-shadow">
+						<div className="relative w-[200px] h-[433px]">
+							<Image src="/static/img/mobileDashboard.webp" alt="Mobile" className="object-cover select-none" sizes="(min-width:1024px) 200px, 0px" loading="lazy" quality={75} fill/>
 						</div>
 					</SlideIn>
 				</div>

@@ -89,4 +89,12 @@
   .rounded-10 {
     border-radius: 10px;
   }
+
+  .box-shadow {
+    box-shadow: 0 0 15px rgba(0, 0, 0, .3);
+  }
+
+  .text-shadow {
+    text-shadow: 0 0 15px rgba(0, 0, 0, .3);
+  }
 }

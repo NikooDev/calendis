@@ -24,6 +24,7 @@ const Serviceworker = () => {
 		const showPrompt = (r: ServiceWorkerRegistration) => {
 			if (shown.current || !r.waiting) return;
 			shown.current = true;
+
 			toast((t) => <Update reg={r} toastId={t.id} />, {
 				id: 'pwa-update',
 				duration: Infinity,
@@ -34,6 +35,7 @@ const Serviceworker = () => {
 
 		const setup = async () => {
 			const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
+
 			try {
 				reg = await navigator.serviceWorker.register(`/static/sw/sw.js?${encodeURIComponent(version)}`, {
 					scope: '/static/sw/',
@@ -52,7 +54,9 @@ const Serviceworker = () => {
 
 			reg.addEventListener('updatefound', () => {
 				const sw = reg!.installing;
+
 				if (!sw) return;
+
 				sw.addEventListener('statechange', () => {
 					if (sw.state === 'installed' && navigator.serviceWorker.controller) {
 						showPrompt(reg!);
