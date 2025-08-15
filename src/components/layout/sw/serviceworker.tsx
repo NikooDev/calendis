@@ -58,9 +58,9 @@ const Serviceworker = () => {
 			const onOnline = () => check();
 			const interval = setInterval(check, 5 * 60 * 1000);
 
-			document.addEventListener('visibilitychange', onVis, { signal: controller.signal } as any);
-			window.addEventListener('focus', onFocus, { signal: controller.signal } as any);
-			window.addEventListener('online', onOnline, { signal: controller.signal } as any);
+			document.addEventListener('visibilitychange', onVis, { signal: controller.signal });
+			window.addEventListener('focus', onFocus, { signal: controller.signal });
+			window.addEventListener('online', onOnline, { signal: controller.signal });
 
 			return () => clearInterval(interval);
 		};
