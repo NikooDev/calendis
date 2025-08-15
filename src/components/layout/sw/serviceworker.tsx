@@ -38,7 +38,7 @@ const Serviceworker = () => {
 
 			try {
 				reg = await navigator.serviceWorker.register(`/static/sw/sw.js?${encodeURIComponent(version)}`, {
-					scope: '/static/sw/',
+					scope: '/',
 					updateViaCache: 'none',
 				});
 			} catch {
@@ -46,20 +46,21 @@ const Serviceworker = () => {
 					(await navigator.serviceWorker.getRegistration()) ??
 					(await navigator.serviceWorker.ready.catch(() => undefined));
 			}
+
 			if (!reg) return;
+			const registration: ServiceWorkerRegistration = reg;
 
 			check();
 
-			if (reg.waiting) showPrompt(reg);
+			if (registration.waiting) showPrompt(registration);
 
-			reg.addEventListener('updatefound', () => {
-				const sw = reg!.installing;
+			registration.addEventListener('updatefound', () => {
+				const worker = registration.installing;
+				if (!worker) return;
 
-				if (!sw) return;
-
-				sw.addEventListener('statechange', () => {
-					if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-						showPrompt(reg!);
+				worker.addEventListener('statechange', () => {
+					if (worker.state === 'installed' && registration.waiting) {
+						showPrompt(registration);
 					}
 				});
 			});

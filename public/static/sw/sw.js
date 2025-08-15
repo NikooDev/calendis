@@ -24,9 +24,7 @@ sw.addEventListener('install', (event) => {
 
 		try {
 			if (ASSETS.length) await cache.addAll(ASSETS);
-		} catch { /* ignore */ }
-
-		await sw.skipWaiting();
+		} catch {}
 	})());
 });
 

@@ -10,7 +10,7 @@ const Page = () => {
 				<div className="flex justify-center pb-20 flex-col items-center lg:items-start lg:flex-row">
 					<div className="self-start flex mx-auto">
 						<SlideIn trigger="mount" delay={100} direction="bottom" className="w-[150px] h-[150px] rounded-full box-shadow">
-							<Image src="/static/img/logo.webp" width={150} height={150} loading="lazy" className="select-none" alt="logo"/>
+							<Image src="/static/img/logo.webp" width={150} height={150} loading="lazy" className="select-none pointer-events-none" alt="logo"/>
 						</SlideIn>
 					</div>
 					<div className="flex flex-col items-center lg:items-start lg:ml-10 mt-4 lg:mt-0 z-10">
@@ -43,12 +43,12 @@ const Page = () => {
 				<div className="relative z-50 hidden lg:flex">
 					<SlideIn trigger="image" delay={400} direction="right" className="rounded-3xl box-shadow">
 						<div className="relative w-[320px] h-[700px]">
-							<Image src="/static/img/mobile.webp" alt="Mobile" className="object-cover select-none" sizes="(min-width:1024px) 300px, 0px" quality={75} fill priority/>
+							<Image src="/static/img/mobile.webp" alt="Mobile" className="object-cover select-none pointer-events-none" sizes="(min-width:1024px) 300px, 0px" quality={75} fill priority/>
 						</div>
 					</SlideIn>
 					<SlideIn trigger="image" delay={700} direction="right" className="absolute -bottom-10 -right-10 rounded-3xl box-shadow">
 						<div className="relative w-[200px] h-[433px]">
-							<Image src="/static/img/mobileDashboard.webp" alt="Mobile" className="object-cover select-none" sizes="(min-width:1024px) 200px, 0px" loading="lazy" quality={75} fill/>
+							<Image src="/static/img/mobileDashboard.webp" alt="Mobile" className="object-cover select-none pointer-events-none" sizes="(min-width:1024px) 200px, 0px" loading="lazy" quality={75} fill/>
 						</div>
 					</SlideIn>
 				</div>
