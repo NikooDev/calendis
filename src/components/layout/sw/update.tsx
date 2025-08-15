@@ -19,7 +19,7 @@ const Update = ({ waiting, toastId }: ISWUpdate) => {
 			settled = true;
 
 			const elapsed = performance.now() - start;
-			const wait = Math.max(0, 3000 - elapsed);
+			const wait = Math.max(0, 300 - elapsed);
 
 			setTimeout(() => {
 				sessionStorage.setItem(FLAG, '1');
