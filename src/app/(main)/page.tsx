@@ -10,7 +10,7 @@ const Page = () => {
 				<div className="flex justify-center pb-20 flex-col items-center lg:items-start lg:flex-row">
 					<div className="self-start flex mx-auto">
 						<SlideIn trigger="mount" delay={100} direction="bottom" className="w-[150px] h-[150px] rounded-full box-shadow">
-							<Image src="/static/img/logo.webp" width={150} height={150} loading="lazy" className="select-none pointer-events-none" alt="logo"/>
+							<Image src="/static/img/logo.webp" width={150} height={150} priority className="select-none pointer-events-none" alt="logo"/>
 						</SlideIn>
 					</div>
 					<div className="flex flex-col items-center lg:items-start lg:ml-10 mt-4 lg:mt-0 z-10">

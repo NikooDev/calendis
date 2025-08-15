@@ -1,29 +1,31 @@
 import React, { useState } from 'react';
 import { ISWUpdate } from '@Calendis/types/sw';
-import { delay } from '@Calendis/utils/functions.util';
 import { FLAG } from '@Calendis/utils/constants.util';
 import Loader from '@Calendis/components/ui/loader/loader';
 import toast from 'react-hot-toast';
 
-const Update = ({ reg, toastId }: ISWUpdate) => {
+const Update = ({ waiting, toastId }: ISWUpdate) => {
 	const [loading, setLoading] = useState(false);
 
-	const onClick = async () => {
-		if (!reg.waiting) return;
+	const done = () => {
+		sessionStorage.setItem(FLAG, '1');
+		toast.dismiss(toastId);
+		location.reload();
+	};
+
+	const onClick = () => {
+		if (!waiting) return;
 		setLoading(true);
 
-		await delay(500);
+		navigator.serviceWorker.addEventListener('controllerchange', done, { once: true });
 
-		const onCtrl = () => {
-			sessionStorage.setItem(FLAG, '1');
-			toast.dismiss(toastId);
-			window.location.reload();
-		};
+		waiting.addEventListener('statechange', () => {
+			if (waiting.state === 'activated') done();
+		}, { once: true });
 
-		navigator.serviceWorker.addEventListener('controllerchange', onCtrl, { once: true });
-		reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+		try { waiting.postMessage({ type: 'SKIP_WAITING' }); } catch {}
 
-		setTimeout(() => setLoading(false), 10_000);
+		setTimeout(done, 7000);
 	};
 
 	return (

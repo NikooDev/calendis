@@ -3,90 +3,86 @@
 import React, { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import Update from '@Calendis/components/layout/sw/update';
-import { FLAG, toastSuccessStyle } from '@Calendis/utils/constants.util';
+import { FLAG } from '@Calendis/utils/constants.util';
 
 const Serviceworker = () => {
-	const shown = useRef(false);
+	const lastShownUrlRef = useRef<string | null>(null);
 
 	useEffect(() => {
 		if (typeof window === 'undefined') return;
 		if (sessionStorage.getItem(FLAG)) {
 			sessionStorage.removeItem(FLAG);
-			toast.success('Mise à jour installée.', { style: toastSuccessStyle, duration: 5000 });
+			toast.success('Mise à jour installée.', { duration: 5000 });
 		}
 	}, []);
 
 	useEffect(() => {
 		if (!('serviceWorker' in navigator)) return;
 
-		let reg: ServiceWorkerRegistration | undefined;
+		const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
+		const controller = new AbortController();
 
-		const showPrompt = (r: ServiceWorkerRegistration) => {
-			if (shown.current || !r.waiting) return;
-			shown.current = true;
+		const showPrompt = (registration: ServiceWorkerRegistration) => {
+			const waiting = registration.waiting;
+			if (!waiting) return;
 
-			toast((t) => <Update reg={r} toastId={t.id} />, {
+			const url = waiting.scriptURL;
+			if (lastShownUrlRef.current === url) return;
+			lastShownUrlRef.current = url;
+
+			toast((t) => <Update waiting={waiting} toastId={t.id} />, {
 				id: 'pwa-update',
 				duration: Infinity,
 			});
 		};
 
-		const check = () => reg?.update().catch(() => {});
-
-		const setup = async () => {
-			const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
-
-			try {
-				reg = await navigator.serviceWorker.register(`/static/sw/sw.js?${encodeURIComponent(version)}`, {
-					scope: '/',
-					updateViaCache: 'none',
-				});
-			} catch {
-				reg =
-					(await navigator.serviceWorker.getRegistration()) ??
-					(await navigator.serviceWorker.ready.catch(() => undefined));
-			}
-
-			if (!reg) return;
-			const registration: ServiceWorkerRegistration = reg;
-
-			check();
-
+		const wire = (registration: ServiceWorkerRegistration) => {
 			if (registration.waiting) showPrompt(registration);
 
 			registration.addEventListener('updatefound', () => {
 				const worker = registration.installing;
 				if (!worker) return;
-
 				worker.addEventListener('statechange', () => {
 					if (worker.state === 'installed' && registration.waiting) {
 						showPrompt(registration);
 					}
 				});
-			});
+			}, { signal: controller.signal });
 
-			const onVis = () => document.visibilityState === 'visible' && check();
+			const check = () => {
+				registration.update().catch(() => {});
+			};
+
+			const onVis = () => { if (document.visibilityState === 'visible') check(); };
 			const onFocus = () => check();
 			const onOnline = () => check();
 			const interval = setInterval(check, 5 * 60 * 1000);
 
-			document.addEventListener('visibilitychange', onVis);
-			window.addEventListener('focus', onFocus);
-			window.addEventListener('online', onOnline);
+			document.addEventListener('visibilitychange', onVis, { signal: controller.signal } as any);
+			window.addEventListener('focus', onFocus, { signal: controller.signal } as any);
+			window.addEventListener('online', onOnline, { signal: controller.signal } as any);
 
-			return () => {
-				document.removeEventListener('visibilitychange', onVis);
-				window.removeEventListener('focus', onFocus);
-				window.removeEventListener('online', onOnline);
-				clearInterval(interval);
-			};
+			return () => clearInterval(interval);
 		};
 
-		let cleanup: (() => void) | void;
-		setup().then((c) => (cleanup = c));
+		let cleanupInterval: (() => void) | undefined;
+
+		(async () => {
+			try {
+				const reg = await navigator.serviceWorker.register(`/sw.js?${encodeURIComponent(version)}`, {
+					scope: '/',
+					updateViaCache: 'none',
+				});
+				cleanupInterval = wire(reg);
+			} catch {
+				const reg = await navigator.serviceWorker.getRegistration().catch(() => undefined);
+				if (reg) cleanupInterval = wire(reg);
+			}
+		})();
 
 		return () => {
-			if (cleanup) cleanup();
+			controller.abort();
+			if (cleanupInterval) cleanupInterval();
 		};
 	}, []);
 

@@ -1,4 +1,4 @@
 export interface ISWUpdate {
-	reg: ServiceWorkerRegistration;
+	waiting: ServiceWorker;
 	toastId: string;
 }
