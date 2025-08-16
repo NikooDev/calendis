@@ -17,6 +17,7 @@ const Page = () => {
 							<p className="font-title text-2xl text-shadow font-black ml-0.5 text-white">Connexion</p>
 						</div>
 					</SlideIn>
+
 					<SlideIn trigger="mount" delay={300} direction="bottom" className="bg-white/10 p-5 rounded-2xl w-full shadow-lg">
 						<Login/>
 					</SlideIn>
