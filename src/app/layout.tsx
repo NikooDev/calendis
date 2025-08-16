@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import type { IChildren } from '@Calendis/types/app';
 import { ysabeauSC, raleway } from '@Calendis/utils/fonts.util';
+import { isProd } from '@Calendis/utils/constants.util';
 import { Toaster } from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
 import StoreProvider from '@Calendis/components/layout/store';
@@ -34,7 +35,7 @@ const rootLayout = ({ children }: Readonly<IChildren>) => {
 		<html lang="fr">
 			<body className={twMerge(ysabeauSC.variable, raleway.variable)}>
 				<StoreProvider>
-					<Serviceworker/>
+					{ isProd && <Serviceworker /> }
 					<NetworkStatus/>
 					<main>
 						{ children }

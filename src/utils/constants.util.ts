@@ -3,3 +3,4 @@ export const toastErrorStyle = { fontWeight: 700, fontSize: '.9rem', color: '#ff
 export const toastSuccessStyle = { fontWeight: 700, fontSize: '.9rem', color: '#3eae20' };
 export const toastInfoStyle = { fontWeight: 700, fontSize: '.9rem', color: '#314158' };
 export const FLAG = 'pwa:updated';
+export const isProd = process.env.NODE_ENV === 'production';
