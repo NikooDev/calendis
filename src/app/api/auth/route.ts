@@ -32,9 +32,11 @@ export const POST = async (req: NextRequest) => {
 			expiresIn: COOKIE_EXPIRE
 		});
 
-		const { hostname, protocol } = req.nextUrl;
+		const { hostname, protocol, pathname } = req.nextUrl;
 		const isHttps = protocol === 'https:';
 		const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+
 
 		const cookieDomain = hostname.endsWith('calendis.fr') ? '.calendis.fr' : undefined;
 		const cookieSecure = isHttps && !isLocalhost;
@@ -58,6 +60,7 @@ export const POST = async (req: NextRequest) => {
 			const isAuth = error.code.startsWith('auth/');
 			return new Response(isAuth ? 'Unauthorized' : 'Internal Error', { status: isAuth ? 401 : 500 });
 		}
+
 		console.error('[POST /api/auth] Unknown error:', error);
 		return new Response('Internal Error', { status: 500 });
 	}

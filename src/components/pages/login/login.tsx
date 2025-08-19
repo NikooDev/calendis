@@ -95,7 +95,7 @@ const Login = () => {
 			return;
 		}
 
-		const { user, token } = res;
+		const { token } = res;
 
 		const response = await fetch('/api/auth', {
 			method: 'POST',
