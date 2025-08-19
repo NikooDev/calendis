@@ -6,6 +6,7 @@ import { twMerge } from 'tailwind-merge';
 import { BackIcon, LockIcon } from '@Calendis/components/ui/icons';
 import Link from 'next/link';
 import Version from '@Calendis/components/layout/serviceworker/version';
+import { isProd } from '@Calendis/utils/constants.util';
 
 const Footer = () => {
 	const pathname = usePathname();
@@ -42,10 +43,14 @@ const Footer = () => {
 				</div>
 				<div className={twMerge('flex items-center ml-auto pr-4', (!isHome && !isLogin) && 'pb-2.5')}>
 					<p className="font-semibold text-white">Calendis © { year }</p>
-					<p className="mx-1 text-white">•</p>
-					<p className="font-semibold text-white">
-						Version <Version/>
-					</p>
+					{ isProd && (
+						<>
+							<p className="mx-1 text-white">•</p>
+							<p className="font-semibold text-white">
+								Version <Version/>
+							</p>
+						</>
+					)}
 				</div>
 			</div>
 		</footer>
