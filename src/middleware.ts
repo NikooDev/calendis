@@ -34,9 +34,6 @@ const middleware = (req: NextRequest) => {
 	 * force a top-level redirect to the public site root (https://calendis.fr/).
 	 * This guarantees admin.* contains no public pages (even / or /login).
 	 */
-	if (isAdminDomain && !hasSession) {
-		return NextResponse.redirect(new URL('https://www.calendis.fr/'));
-	}
 
 	/**
 	 * If the request targets admin.calendis.fr and the user DOES have a session,
@@ -44,13 +41,16 @@ const middleware = (req: NextRequest) => {
 	 * All other admin paths are allowed to pass through.
 	 */
 	if (isAdminDomain && hasSession) {
+		// ne jamais exposer /login sur le sous-domaine admin
 		if (isLoginPath) {
 			const dest = url.clone();
 			dest.pathname = '/';
 			dest.search = '';
 			return redirectSafe(dest);
 		}
-		return NextResponse.next();
+		// REWRITE : "/" -> "/admin", "/x" -> "/admin/x" (URL visible inchangée)
+		const rewritePath = `/admin${isRootPath ? '' : pathname}`;
+		return NextResponse.rewrite(new URL(rewritePath + url.search, req.url));
 	}
 
 
@@ -67,6 +67,12 @@ const middleware = (req: NextRequest) => {
 	 * On the main domain (calendis.fr), if the user is authenticated and hits
 	 * public entry points (/ or /login), send them to /admin on the admin subdomain.
 	 */
+	if (isMainDomain && isAdminPath && hasSession) {
+		const rest = pathname.slice('/admin'.length) || '/';
+		return redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
+	}
+
+	// connecté: / ou /login -> racine d'admin.calendis.fr
 	if (isMainDomain && hasSession && (isRootPath || isLoginPath)) {
 		return redirectSafe(new URL('/', 'https://admin.calendis.fr'));
 	}
@@ -81,19 +87,19 @@ const middleware = (req: NextRequest) => {
 			const dest = url.clone();
 			dest.pathname = '/login';
 			dest.search = '';
-			return redirectSafe(dest);
+			return NextResponse.redirect(dest);
 		}
 		if (hasSession && (isRootPath || isLoginPath)) {
 			const dest = url.clone();
 			dest.pathname = '/admin';
 			dest.search = '';
-			return redirectSafe(dest);
+			return NextResponse.redirect(dest);
 		}
 	}
 
 	return NextResponse.next();
 }
 
-export const config = { matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js|map)).*)'] };
+export const config = { matcher: ['/', '/login', '/admin/:path*'] };
 
 export default middleware;
