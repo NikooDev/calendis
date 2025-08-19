@@ -33,7 +33,7 @@ const middleware = (req: NextRequest) => {
 	 * This guarantees admin.* contains no public pages (even / or /login).
 	 */
 	if (isAdminDomain && !hasSession) {
-		return NextResponse.redirect(new URL('https://calendis.fr/'));
+		return NextResponse.redirect(new URL('https://www.calendis.fr/'));
 	}
 
 	/**
@@ -44,7 +44,7 @@ const middleware = (req: NextRequest) => {
 	if (isAdminDomain && hasSession) {
 		if (isRootPath || isLoginPath) {
 			const dest = url.clone();
-			dest.pathname = '/admin';
+			dest.pathname = '/';
 			dest.search = '';
 			return NextResponse.redirect(dest);
 		}
@@ -73,11 +73,19 @@ const middleware = (req: NextRequest) => {
 	 * protect any /admin path when NO session cookie is present
 	 * by redirecting to /login on the SAME host.
 	 */
-	if (!isCalendis && isAdminPath && !hasSession) {
-		const dest = url.clone();
-		dest.pathname = '/login';
-		dest.search = '';
-		return NextResponse.redirect(dest);
+	if (!isCalendis) {
+		if (isAdminPath && !hasSession) {
+			const dest = url.clone();
+			dest.pathname = '/login';
+			dest.search = '';
+			return NextResponse.redirect(dest);
+		}
+		if (hasSession && (isRootPath || isLoginPath)) {
+			const dest = url.clone();
+			dest.pathname = '/admin';
+			dest.search = '';
+			return NextResponse.redirect(dest);
+		}
 	}
 
 	return NextResponse.next();

@@ -56,7 +56,7 @@ const ServiceWorker = () => {
 			const onVis = () => { if (document.visibilityState === 'visible') check(); };
 			const onFocus = () => check();
 			const onOnline = () => check();
-			const interval = setInterval(check, 5 * 60 * 1000);
+			const interval = setInterval(check, 3 * 60 * 1000);
 
 			document.addEventListener('visibilitychange', onVis, { signal: controller.signal });
 			window.addEventListener('focus', onFocus, { signal: controller.signal });
