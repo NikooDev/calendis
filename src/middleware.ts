@@ -44,14 +44,12 @@ const middleware = (req: NextRequest) => {
 	 * All other admin paths are allowed to pass through.
 	 */
 	if (isAdminDomain && hasSession) {
-		// /login ne doit jamais exister sur admin.* -> envoyer à la racine
 		if (isLoginPath) {
 			const dest = url.clone();
 			dest.pathname = '/';
 			dest.search = '';
 			return redirectSafe(dest);
 		}
-		// Rewrite: "/" -> "/admin", "/x" -> "/admin/x" (URL visible inchangée)
 		const rewritePath = `/admin${isRootPath ? '' : pathname}`;
 		return NextResponse.rewrite(new URL(rewritePath + url.search, req.url));
 	}
@@ -70,8 +68,6 @@ const middleware = (req: NextRequest) => {
 	 * On the main domain (calendis.fr), if the user is authenticated and hits
 	 * public entry points (/ or /login), send them to /admin on the admin subdomain.
 	 */
-
-	// connecté: / ou /login -> racine d'admin.calendis.fr
 	if (isMainDomain && hasSession && (isRootPath || isLoginPath)) {
 		return redirectSafe(new URL('/', 'https://admin.calendis.fr'));
 	}
