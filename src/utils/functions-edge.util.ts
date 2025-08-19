@@ -139,26 +139,49 @@ export async function verifyFirebaseSessionJWT(
 
 /** ---------- Cookies helpers ---------- */
 
+function buildPathCandidates(currentPath: string): string[] {
+	// '/admin/a/b' -> ['/admin/a/b','/admin/a','/admin','/']
+	const parts = currentPath.split('/').filter(Boolean);
+	const paths: string[] = ['/'];
+	let acc = '';
+	for (const p of parts) {
+		acc += `/${p}`;
+		paths.push(acc);
+	}
+	// supprime les doublons et trie du plus long au plus court
+	return Array.from(new Set(paths)).sort((a, b) => b.length - a.length);
+}
+
 export function purgeSessionCookie(
 	res: NextResponse,
 	isHttps: boolean,
 	hostname: string,
+	currentPath: string = '/'
 ) {
+	const candidates = buildPathCandidates(currentPath);
+
+	// Cookie partagé entre sous-domaines (prod)
 	if (hostname.endsWith('calendis.fr')) {
+		for (const path of candidates) {
+			res.cookies.set('user', '', {
+				path,
+				domain: '.calendis.fr',
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: isHttps,
+				maxAge: 0,
+			});
+		}
+	}
+
+	// Variante host-only (au cas où elle existerait)
+	for (const path of candidates) {
 		res.cookies.set('user', '', {
-			path: '/',
-			domain: '.calendis.fr',
+			path,
 			httpOnly: true,
 			sameSite: 'lax',
 			secure: isHttps,
 			maxAge: 0,
 		});
 	}
-	res.cookies.set('user', '', {
-		path: '/',
-		httpOnly: true,
-		sameSite: 'lax',
-		secure: isHttps,
-		maxAge: 0,
-	});
 }
