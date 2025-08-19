@@ -149,7 +149,7 @@ class AuthService {
 		}
 	}
 
-	private static async hardLogout(auth: Auth): Promise<void> {
+	public static async hardLogout(auth: Auth): Promise<void> {
 		if (this.loggingOut) return;
 		this.loggingOut = true;
 
