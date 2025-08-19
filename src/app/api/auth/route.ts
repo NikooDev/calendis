@@ -32,11 +32,9 @@ export const POST = async (req: NextRequest) => {
 			expiresIn: COOKIE_EXPIRE
 		});
 
-		const { hostname, protocol, pathname } = req.nextUrl;
+		const { hostname, protocol } = req.nextUrl;
 		const isHttps = protocol === 'https:';
 		const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-
-
 
 		const cookieDomain = hostname.endsWith('calendis.fr') ? '.calendis.fr' : undefined;
 		const cookieSecure = isHttps && !isLocalhost;
