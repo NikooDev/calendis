@@ -8,7 +8,7 @@ import Tippy from '@tippyjs/react';
 import Loader from '@Calendis/components/ui/loader/loader';
 import { isEmailRegex } from '@Calendis/utils/constants.util';
 import { NetworkEnum } from '@Calendis/types/app';
-import { delay } from '@Calendis/utils/functions.util';
+import { delay } from '@Calendis/utils/functions-client.util';
 import { signIn } from '@Calendis/actions/auth.action';
 import { IAuth } from '@Calendis/types/auth';
 import { useSelector } from 'react-redux';

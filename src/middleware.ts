@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { purgeSessionCookie, verifyFirebaseSessionJWT } from '@Calendis/utils/functions-edge.util';
 
 /**
  * Global middleware that orchestrates cross-subdomain auth routing.
@@ -10,9 +11,9 @@ import type { NextRequest } from 'next/server';
  * - On calendis.fr: when authenticated, /admin (or /, /login) should live on admin.calendis.fr
  * - On non-calendis hosts (localhost, previews): protect /admin → /login on same host
  */
-const middleware = (req: NextRequest) => {
+const middleware = async (req: NextRequest) => {
 	const url = req.nextUrl;
-	const pathname = url.pathname;
+	const { pathname, protocol } = url;
 
 	const host = req.headers.get('host') ?? '';
 	const hostname = host.split(':')[0];
@@ -26,14 +27,23 @@ const middleware = (req: NextRequest) => {
 	const isAdminPath = pathname.startsWith('/admin');
 	const isLoginPath = pathname === '/login';
 	const isRootPath = pathname === '/';
+	const isHttps = protocol === 'https:';
 
 	const redirectSafe = (to: URL) => (to.href === req.url ? NextResponse.next() : NextResponse.redirect(to));
 
-	if (isAdminDomain && !hasSession) {
-		return NextResponse.redirect(new URL('https://www.calendis.fr/login'));
+	const raw = req.cookies.get('user')?.value;
+	const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+	const looksValid =
+		!!(projectId && raw) &&
+		(await verifyFirebaseSessionJWT(raw!, projectId!)).ok;
+
+	if (isAdminDomain && !looksValid) {
+		const res = NextResponse.redirect(new URL('https://www.calendis.fr/login'));
+		purgeSessionCookie(res, isHttps, hostname);
+		return res;
 	}
 
-	if (isAdminDomain && hasSession) {
+	if (isAdminDomain && looksValid) {
 		if (isLoginPath) {
 			const dest = url.clone();
 			dest.pathname = '/';
@@ -44,28 +54,21 @@ const middleware = (req: NextRequest) => {
 		return NextResponse.rewrite(new URL(rewritePath + url.search, req.url));
 	}
 
-	if (isMainDomain && isAdminPath && hasSession) {
-		const rest = pathname.slice('/admin'.length) || '/';
-		return redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
+	if (isMainDomain && looksValid) {
+		if (isAdminPath) {
+			const rest = pathname.slice('/admin'.length) || '/';
+			return redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
+		}
+		if (isRootPath || isLoginPath) {
+			return redirectSafe(new URL('/', 'https://admin.calendis.fr'));
+		}
 	}
 
-	if (isMainDomain && hasSession && (isRootPath || isLoginPath)) {
-		return redirectSafe(new URL('/', 'https://admin.calendis.fr'));
-	}
-
-	if (!isCalendis) {
-		if (isAdminPath && !hasSession) {
-			const dest = url.clone();
-			dest.pathname = '/login';
-			dest.search = '';
-			return NextResponse.redirect(dest);
-		}
-		if (hasSession && (isRootPath || isLoginPath)) {
-			const dest = url.clone();
-			dest.pathname = '/admin';
-			dest.search = '';
-			return NextResponse.redirect(dest);
-		}
+	if (!isCalendis && isAdminPath && !looksValid) {
+		const dest = url.clone();
+		dest.pathname = '/login';
+		dest.search = '';
+		return redirectSafe(dest);
 	}
 
 	return NextResponse.next();
