@@ -1,7 +1,7 @@
 import 'server-only';
 import { adminAuth } from '@Calendis/services/firebase-admin.service';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 /**
  * Verifies the session of a user.
@@ -22,15 +22,19 @@ export const verifyAuthSession = async (token?: string) => {
  */
 export const checkAuth = async () => {
 	const authCookie = await cookies();
-	const token = authCookie.get('user');
+	const session = authCookie.get('user')?.value;
 
-	if (!token || token && !token.value) {
-		return redirect('/login');
-	}
+	const host = (await headers()).get('host') ?? '';
+	const isAdminHost = host === 'admin.calendis.fr';
 
-	const session = await verifyAuthSession(token.value);
+	const loginURL = isAdminHost ? 'https://www.calendis.fr/login' : '/login';
 
-	if (!session) {
-		return redirect('/login');
+	if (!session) return redirect(loginURL);
+
+	try {
+		await adminAuth.verifySessionCookie(session, true);
+		return;
+	} catch {
+		return redirect(loginURL);
 	}
 }

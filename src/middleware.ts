@@ -27,6 +27,8 @@ const middleware = (req: NextRequest) => {
 	const isLoginPath = pathname === '/login';
 	const isRootPath = pathname === '/';
 
+	const redirectSafe = (to: URL) => (to.href === req.url ? NextResponse.next() : NextResponse.redirect(to));
+
 	/**
 	 * If the request targets admin.calendis.fr and the user has NO session cookie,
 	 * force a top-level redirect to the public site root (https://calendis.fr/).
@@ -42,11 +44,11 @@ const middleware = (req: NextRequest) => {
 	 * All other admin paths are allowed to pass through.
 	 */
 	if (isAdminDomain && hasSession) {
-		if (isRootPath || isLoginPath) {
+		if (isLoginPath) {
 			const dest = url.clone();
 			dest.pathname = '/';
 			dest.search = '';
-			return NextResponse.redirect(dest);
+			return redirectSafe(dest);
 		}
 		return NextResponse.next();
 	}
@@ -57,7 +59,8 @@ const middleware = (req: NextRequest) => {
 	 * redirect them to the admin subdomain, preserving the path and query string.
 	 */
 	if (isMainDomain && isAdminPath && hasSession) {
-		return NextResponse.redirect(new URL(url.pathname + url.search, 'https://admin.calendis.fr'));
+		const rest = pathname.slice('/admin'.length) || '/';
+		return redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
 	}
 
 	/**
@@ -65,7 +68,7 @@ const middleware = (req: NextRequest) => {
 	 * public entry points (/ or /login), send them to /admin on the admin subdomain.
 	 */
 	if (isMainDomain && hasSession && (isRootPath || isLoginPath)) {
-		return NextResponse.redirect(new URL('/', 'https://admin.calendis.fr'));
+		return redirectSafe(new URL('/', 'https://admin.calendis.fr'));
 	}
 
 	/**
@@ -78,19 +81,19 @@ const middleware = (req: NextRequest) => {
 			const dest = url.clone();
 			dest.pathname = '/login';
 			dest.search = '';
-			return NextResponse.redirect(dest);
+			return redirectSafe(dest);
 		}
 		if (hasSession && (isRootPath || isLoginPath)) {
 			const dest = url.clone();
 			dest.pathname = '/admin';
 			dest.search = '';
-			return NextResponse.redirect(dest);
+			return redirectSafe(dest);
 		}
 	}
 
 	return NextResponse.next();
 }
 
-export const config = { matcher: ['/', '/login', '/admin/:path*'] };
+export const config = { matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js|map)).*)'] };
 
 export default middleware;
