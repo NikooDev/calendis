@@ -65,7 +65,7 @@ const middleware = (req: NextRequest) => {
 	 * public entry points (/ or /login), send them to /admin on the admin subdomain.
 	 */
 	if (isMainDomain && hasSession && (isRootPath || isLoginPath)) {
-		return NextResponse.redirect(new URL('/admin', 'https://admin.calendis.fr'));
+		return NextResponse.redirect(new URL('/', 'https://admin.calendis.fr'));
 	}
 
 	/**
