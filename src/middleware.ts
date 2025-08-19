@@ -29,20 +29,10 @@ const middleware = (req: NextRequest) => {
 
 	const redirectSafe = (to: URL) => (to.href === req.url ? NextResponse.next() : NextResponse.redirect(to));
 
-	/**
-	 * If the request targets admin.calendis.fr and the user has NO session cookie,
-	 * force a top-level redirect to the public site root (https://calendis.fr/).
-	 * This guarantees admin.* contains no public pages (even / or /login).
-	 */
 	if (isAdminDomain && !hasSession) {
 		return NextResponse.redirect(new URL('https://www.calendis.fr/login'));
 	}
 
-	/**
-	 * If the request targets admin.calendis.fr and the user DOES have a session,
-	 * normalize entry points (/ or /login) to /admin.
-	 * All other admin paths are allowed to pass through.
-	 */
 	if (isAdminDomain && hasSession) {
 		if (isLoginPath) {
 			const dest = url.clone();
@@ -54,29 +44,15 @@ const middleware = (req: NextRequest) => {
 		return NextResponse.rewrite(new URL(rewritePath + url.search, req.url));
 	}
 
-
-	/**
-	 * On the main domain (calendis.fr), if the user is authenticated and requests /admin,
-	 * redirect them to the admin subdomain, preserving the path and query string.
-	 */
 	if (isMainDomain && isAdminPath && hasSession) {
 		const rest = pathname.slice('/admin'.length) || '/';
 		return redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
 	}
 
-	/**
-	 * On the main domain (calendis.fr), if the user is authenticated and hits
-	 * public entry points (/ or /login), send them to /admin on the admin subdomain.
-	 */
 	if (isMainDomain && hasSession && (isRootPath || isLoginPath)) {
 		return redirectSafe(new URL('/', 'https://admin.calendis.fr'));
 	}
 
-	/**
-	 * Fallback for non-calendis hosts (localhost, preview deployments):
-	 * protect any /admin path when NO session cookie is present
-	 * by redirecting to /login on the SAME host.
-	 */
 	if (!isCalendis) {
 		if (isAdminPath && !hasSession) {
 			const dest = url.clone();
