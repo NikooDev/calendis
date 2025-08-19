@@ -12,10 +12,9 @@ import { delay } from '@Calendis/utils/functions.util';
 import { signIn } from '@Calendis/actions/auth.action';
 import { IAuth } from '@Calendis/types/auth';
 import { useSelector } from 'react-redux';
+import { useRouter } from 'next/navigation';
 import { RootState } from '@Calendis/store/reducers';
 import './login.css';
-import AuthService from '@Calendis/services/auth.service';
-import { useRouter } from 'next/navigation';
 
 const Login = () => {
 	const [login, setLogin] = useState<IAuth>({ email: '', password: '' });
@@ -96,8 +95,6 @@ const Login = () => {
 			return;
 		}
 
-		//AuthService.setSigningIn(true);
-
 		const { user, token } = res;
 
 		const response = await fetch('/api/auth', {
@@ -112,11 +109,9 @@ const Login = () => {
 			setPending(false);
 			setFormValid(false);
 			setFormError('Impossible de créer la session.');
-			//AuthService.setSigningIn(false);
 			return;
 		}
 
-		//AuthService.setSigningIn(false);
 		router.replace('/admin');
 	}
 
