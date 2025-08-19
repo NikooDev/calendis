@@ -119,16 +119,40 @@ class AuthService {
 		return p === '/login' || p.startsWith('/login?');
 	}
 
-	private static loginURL() {
+	private static canonicalLoginURL(): string {
 		if (typeof window === 'undefined') return '/login';
-		return window.location.hostname === 'admin.calendis.fr'
-			? `${window.location.protocol}//calendis.fr/login`
-			: '/login';
+
+		const { protocol, hostname } = window.location;
+		const isCalendis = hostname.toLowerCase().endsWith('calendis.fr');
+
+		if (isCalendis) {
+			return `${protocol}//calendis.fr/login`;
+		}
+
+		return '/login';
 	}
 
-	private static redirectToLogin() {
+	private static isOnCanonicalLogin(): boolean {
+		if (typeof window === 'undefined') return false;
+		const target = this.canonicalLoginURL();
+
+		try {
+			const a = new URL(target, window.location.href);
+			const b = new URL(window.location.href);
+			return a.hostname === b.hostname && a.pathname === b.pathname;
+		} catch {
+			return false;
+		}
+	}
+
+	private static redirectToLogin(): void {
 		if (typeof window === 'undefined') return;
-		if (!this.isOnLogin()) window.location.replace(this.loginURL());
+
+		const target = this.canonicalLoginURL();
+
+		if (!this.isOnCanonicalLogin()) {
+			window.location.replace(target);
+		}
 	}
 
 	private static async hardLogout(auth: Auth): Promise<void> {
