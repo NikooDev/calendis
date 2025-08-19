@@ -4,20 +4,6 @@ import { redirect } from 'next/navigation';
 import { cookies, headers } from 'next/headers';
 
 /**
- * Verifies the session of a user.
- * @param token
- */
-export const verifyAuthSession = async (token?: string) => {
-	if (!token) return null;
-
-	try {
-		return await adminAuth.verifySessionCookie(token, true);
-	} catch {
-		return null;
-	}
-}
-
-/**
  * Checks if the user is authenticated.
  */
 export const checkAuth = async () => {

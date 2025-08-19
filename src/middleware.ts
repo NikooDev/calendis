@@ -33,11 +33,9 @@ export const middleware = async (req: NextRequest) => {
 	const publicLogin = new URL('https://www.calendis.fr/login');
 
 	const raw = req.cookies.get('user')?.value;
-	const projectId =
-		process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
-
-	const looksValid =
-		!!(projectId && raw) && (await verifyFirebaseSessionJWT(raw!, projectId!)).ok;
+	const envPid = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+	const vr = raw ? await verifyFirebaseSessionJWT(raw, envPid) : { ok: false, reason: 'missing' as const };
+	const looksValid = vr.ok;
 
 	/* ===================== PRODUCTION: admin.calendis.fr ===================== */
 

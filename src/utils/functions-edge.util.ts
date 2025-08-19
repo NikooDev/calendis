@@ -84,13 +84,9 @@ export type VerifyResult =
 	| { ok: true; payload: JwtPayload }
 	| { ok: false; reason: string };
 
-function toArrayBuffer(u8: Uint8Array): ArrayBuffer {
-	return u8.slice().buffer;
-}
-
 export async function verifyFirebaseSessionJWT(
 	token: string,
-	projectId: string,
+	projectIdFromEnv?: string,
 ): Promise<VerifyResult> {
 	const parts = token.split('.');
 	if (parts.length !== 3) return { ok: false, reason: 'shape' };
@@ -101,6 +97,10 @@ export async function verifyFirebaseSessionJWT(
 
 	if (header.alg !== 'RS256') return { ok: false, reason: 'alg' };
 	if (!header.kid) return { ok: false, reason: 'kid' };
+
+	// ✅ fallback: si env absent, on déduit depuis le payload
+	const projectId = projectIdFromEnv ?? (typeof payload.aud === 'string' ? payload.aud : undefined);
+	if (!projectId) return { ok: false, reason: 'aud-missing' };
 
 	const iss = `https://session.firebase.google.com/${projectId}`;
 	if (payload.iss !== iss) return { ok: false, reason: 'iss' };
@@ -120,20 +120,21 @@ export async function verifyFirebaseSessionJWT(
 	if (!key) return { ok: false, reason: 'key' };
 
 	const signingInput = `${parts[0]}.${parts[1]}`;
-	const sigBytes = b64uToBytes(parts[2]);
+	const sigBytes  = b64uToBytes(parts[2]);
 	const dataBytes = new TextEncoder().encode(signingInput);
 
-	const sigBuf  = toArrayBuffer(sigBytes);
-	const dataBuf = toArrayBuffer(dataBytes);
+	// Passe des ArrayBuffer “propres” à WebCrypto pour éviter les warnings TS
+	const sigBuf  = sigBytes.slice().buffer;
+	const dataBuf = dataBytes.slice().buffer;
 
 	const valid = await crypto.subtle.verify(
-		'RSASSA-PKCS1-v1_5',
+		{ name: 'RSASSA-PKCS1-v1_5' },
 		key,
 		sigBuf,
 		dataBuf,
 	);
-
 	if (!valid) return { ok: false, reason: 'signature' };
+
 	return { ok: true, payload };
 }
 

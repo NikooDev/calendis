@@ -112,7 +112,11 @@ const Login = () => {
 			return;
 		}
 
-		router.replace('/admin');
+		if (window.location.hostname.endsWith('calendis.fr')) {
+			window.location.replace(`${window.location.protocol}//admin.calendis.fr/`);
+		} else {
+			router.replace('/admin');
+		}
 	}
 
 	return (
