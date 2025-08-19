@@ -1,12 +1,12 @@
 import React from 'react';
 import Image from 'next/image';
-import Login from '@Calendis/components/pages/login';
 import SlideIn from '@Calendis/components/animations/slidein';
+import Login from '@Calendis/components/pages/login/login';
 
 const Page = () => {
 	return (
 		<section className="flex justify-center items-center h-dvh w-full bg-theme-700">
-			<div className="relative px-4 w-full sm:max-w-[500px] z-30 pb-28 lg:pb-0">
+			<div className="relative px-4 w-full sm:max-w-[500px] z-30 pb-28 lg:pb-10">
 				<div className="flex flex-col items-center justify-center relative">
 					<SlideIn trigger="mount" delay={100} direction="bottom" className="flex flex-col lg:flex-row gap-2 lg:gap-8 mb-10 p-5">
 						<div className="mx-auto">

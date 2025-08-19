@@ -2,41 +2,28 @@ import React from 'react';
 import type { Metadata } from 'next';
 import type { IChildren } from '@Calendis/types/app';
 import { ysabeauSC, raleway } from '@Calendis/utils/fonts.util';
-import { isProd } from '@Calendis/utils/constants.util';
+import { isProd, metadatas } from '@Calendis/utils/constants.util';
 import { Toaster } from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
 import StoreProvider from '@Calendis/components/layout/store';
-import Serviceworker from '@Calendis/components/layout/sw/serviceworker';
+import AuthListener from '@Calendis/components/layout/auth/authlistener';
+import ServiceWorker from '@Calendis/components/layout/serviceworker/sw';
 import NetworkStatus from '@Calendis/components/layout/network';
+import Navprogress from '@Calendis/components/layout/navprogress';
 import '@Calendis/assets/theme/globals.css';
 import '@Calendis/assets/theme/tooltip.css';
 
-export const metadata: Metadata = {
-	title: 'Calendis',
-	description: 'La planification connectée des tournées de calendriers',
-	icons: {
-		icon: [
-			{
-				rel: 'icon',
-				type: 'image/ico',
-				url: '/static/icons/favicon.ico',
-				sizes: '16x16'
-			}
-		],
-		apple: [
-			{ url: '/img/apple-touch-icon-180x180.png', sizes: '180x180' }
-		]
-	},
-	manifest: '/manifest.json'
-};
+export const metadata: Metadata = metadatas;
 
 const rootLayout = ({ children }: Readonly<IChildren>) => {
 	return (
 		<html lang="fr">
 			<body className={twMerge(ysabeauSC.variable, raleway.variable)}>
 				<StoreProvider>
-					{ isProd && <Serviceworker /> }
+					<AuthListener/>
+					{ isProd && <ServiceWorker /> }
 					<NetworkStatus/>
+					<Navprogress/>
 					<main>
 						{ children }
 					</main>

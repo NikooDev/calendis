@@ -48,7 +48,7 @@ export const signIn = async (email: string, password: string) => {
 					console.error('[auth:signIn]', error.code);
 			}
 		} else {
-			console.error('[auth:signIn] unknown error', error);
+			console.error('[auth:signIn] unknown error:', error);
 		}
 
 		return {

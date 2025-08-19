@@ -9,9 +9,12 @@
     "deploy": "vercel deploy --prod"
   },
   "dependencies": {
+    "@bprogress/next": "^3.2.12",
     "@reduxjs/toolkit": "^2.8.2",
     "@tippyjs/react": "^4.2.6",
     "firebase": "^12.1.0",
+    "firebase-admin": "^13.4.0",
+    "jose": "^6.0.12",
     "next": "15.4.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",

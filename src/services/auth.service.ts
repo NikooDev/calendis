@@ -1,0 +1,166 @@
+import FirebaseService from '@Calendis/services/firebase.service';
+import { type Auth, type User, signOut, onIdTokenChanged } from '@firebase/auth';
+import store from '@Calendis/store';
+import { setLoginError, setLoginSuccess, setLogout } from '@Calendis/store/reducers/auth.reducer';
+import { resetStore } from '@Calendis/store/reducers';
+import { FirebaseError } from '@firebase/app';
+
+class AuthService {
+	private static listenerStarted = false;
+	private static unsubscribeFn: (() => void) | null = null;
+	private static loggingOut = false;
+	private static focusCheckInFlight: Promise<boolean> | null = null;
+	private static lastFocusCheck = 0;
+	private static readonly MIN_FOCUS_INTERVAL = 1500;
+
+	private static async checkOnFocus(auth: Auth) {
+		const now = Date.now();
+		if (now - this.lastFocusCheck < this.MIN_FOCUS_INTERVAL) return;
+
+		if (this.focusCheckInFlight) {
+			await this.focusCheckInFlight;
+			return;
+		}
+
+		if (!navigator.onLine) return;
+
+		this.focusCheckInFlight = (async () => {
+			const status = await this.checkAuth();
+			this.lastFocusCheck = Date.now();
+
+			if (!status) {
+				await this.hardLogout(auth);
+			}
+
+			return status;
+		})().finally(() => {
+			this.focusCheckInFlight = null;
+		});
+
+		await this.focusCheckInFlight;
+	}
+
+	public static startAuthListener(): void {
+		if (typeof window === 'undefined') return;
+		if (this.listenerStarted && this.unsubscribeFn) return;
+
+		this.listenerStarted = true;
+
+		let auth: Auth;
+
+		try {
+			auth = FirebaseService.auth;
+		} catch (error) {
+			console.error('[AuthService:startAuthListener] Firebase auth unavailable:', error);
+			this.listenerStarted = false;
+			return;
+		}
+
+		const Store = store();
+
+		this.unsubscribeFn = onIdTokenChanged(
+			auth,
+			async (user: User | null) => {
+				try {
+					if (!user) {
+						await this.hardLogout(auth);
+						return;
+					}
+
+					Store.dispatch(setLoginSuccess());
+					//const profile = await getUserProfileFromFirestore(user.uid);
+					//store.dispatch(setUserProfile({ uid: user.uid, email: user.email!, ...profile }));
+				} catch (err) {
+					console.error('[AuthService:startAuthListener] handler error:', err);
+					Store.dispatch(setLoginError());
+					Store.dispatch(resetStore());
+				}
+			}, (error) => {
+				console.error('[AuthService:startAuthListener] onIdTokenChanged error:', error);
+			}
+		);
+
+		const onFocus = () => { void this.checkOnFocus(auth); };
+		window.addEventListener('focus', onFocus);
+
+		const onVis = () => { if (document.visibilityState === 'visible') void this.checkOnFocus(auth); };
+		document.addEventListener('visibilitychange', onVis);
+
+		const onPageShow = (e: PageTransitionEvent) => { if (e.persisted) void this.checkOnFocus(auth); };
+		window.addEventListener('pageshow', onPageShow);
+
+		const onOnline = () => { void this.checkOnFocus(auth); };
+		window.addEventListener('online', onOnline);
+	}
+
+	private static async checkAuth(): Promise<boolean> {
+		try {
+			const res = await fetch('/api/auth', {
+				method: 'GET',
+				credentials: 'include',
+				cache: 'no-store'
+			});
+
+			return res.ok;
+		} catch {
+			return false;
+		}
+	}
+
+	private static async serverLogout() {
+		try {
+			await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
+		} catch {}
+	}
+
+	private static isOnLogin() {
+		if (typeof window === 'undefined') return false;
+		const p = window.location.pathname;
+		return p === '/login' || p.startsWith('/login?');
+	}
+
+	private static loginURL() {
+		if (typeof window === 'undefined') return '/login';
+		return window.location.hostname === 'admin.calendis.fr'
+			? `${window.location.protocol}//calendis.fr/login`
+			: '/login';
+	}
+
+	private static redirectToLogin() {
+		if (typeof window === 'undefined') return;
+		if (!this.isOnLogin()) window.location.replace(this.loginURL());
+	}
+
+	private static async hardLogout(auth: Auth): Promise<void> {
+		if (this.loggingOut) return;
+		this.loggingOut = true;
+
+		try {
+			await this.serverLogout();
+			try { await signOut(auth); } catch (error) {
+				if ((error instanceof FirebaseError)) {
+					console.warn('[AuthService:hardLogout] signOut failed:', error.code);
+				} else {
+					console.error('[AuthService:hardLogout] signOut error:', error);
+				}
+			}
+
+			const Store = store();
+
+			Store.dispatch(setLogout());
+			Store.dispatch(resetStore());
+		} finally {
+			this.loggingOut = false;
+		}
+
+		this.redirectToLogin();
+	}
+
+	public static stopAuthListener(): void {
+		this.unsubscribeFn?.();
+		this.unsubscribeFn = null;
+		this.listenerStarted = false;
+	}
+}
+
+export default AuthService;

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { twMerge } from 'tailwind-merge';
 import { BackIcon, LockIcon } from '@Calendis/components/ui/icons';
 import Link from 'next/link';
-import Version from '@Calendis/components/layout/sw/version';
+import Version from '@Calendis/components/layout/serviceworker/version';
 
 const Footer = () => {
 	const pathname = usePathname();

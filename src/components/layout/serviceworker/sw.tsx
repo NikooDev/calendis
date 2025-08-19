@@ -2,10 +2,10 @@
 
 import React, { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import Update from '@Calendis/components/layout/sw/update';
+import Update from '@Calendis/components/layout/serviceworker/update';
 import { FLAG, toastSuccessStyle } from '@Calendis/utils/constants.util';
 
-const Serviceworker = () => {
+const ServiceWorker = () => {
 	const lastShownUrlRef = useRef<string | null>(null);
 
 	useEffect(() => {
@@ -89,4 +89,4 @@ const Serviceworker = () => {
 	return null;
 }
 
-export default Serviceworker;
+export default ServiceWorker;

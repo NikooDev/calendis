@@ -14,6 +14,8 @@ import { IAuth } from '@Calendis/types/auth';
 import { useSelector } from 'react-redux';
 import { RootState } from '@Calendis/store/reducers';
 import './login.css';
+import AuthService from '@Calendis/services/auth.service';
+import { useRouter } from 'next/navigation';
 
 const Login = () => {
 	const [login, setLogin] = useState<IAuth>({ email: '', password: '' });
@@ -26,6 +28,7 @@ const Login = () => {
 	const inputRef = useRef<HTMLInputElement[]>([]);
 	const togglePasswordRef = useRef<HTMLButtonElement | null>(null);
 	const online = useSelector((state: RootState) => state.app.online);
+	const router = useRouter();
 
 	useEffect(() => {
 		if ((login.email.trim() && isEmailRegex.test(login.email) && login.password.trim()) && online === NetworkEnum.ONLINE) {
@@ -93,11 +96,29 @@ const Login = () => {
 			return;
 		}
 
+		//AuthService.setSigningIn(true);
+
 		const { user, token } = res;
 
+		const response = await fetch('/api/auth', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			credentials: 'include',
+			body: JSON.stringify({ token })
+		});
 
+		if (!response.ok) {
+			console.error('POST /api/auth failed:', response.status);
+			setPending(false);
+			setFormValid(false);
+			setFormError('Impossible de créer la session.');
+			//AuthService.setSigningIn(false);
+			return;
+		}
+
+		//AuthService.setSigningIn(false);
+		router.replace('/admin');
 	}
-
 
 	return (
 		<form onSubmit={handleSubmit} className="flex flex-col" method="post">
