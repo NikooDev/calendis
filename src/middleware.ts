@@ -34,6 +34,9 @@ const middleware = (req: NextRequest) => {
 	 * force a top-level redirect to the public site root (https://calendis.fr/).
 	 * This guarantees admin.* contains no public pages (even / or /login).
 	 */
+	if (isAdminDomain && !hasSession) {
+		return NextResponse.redirect(new URL('https://www.calendis.fr/login'));
+	}
 
 	/**
 	 * If the request targets admin.calendis.fr and the user DOES have a session,
@@ -41,14 +44,14 @@ const middleware = (req: NextRequest) => {
 	 * All other admin paths are allowed to pass through.
 	 */
 	if (isAdminDomain && hasSession) {
-		// ne jamais exposer /login sur le sous-domaine admin
+		// /login ne doit jamais exister sur admin.* -> envoyer à la racine
 		if (isLoginPath) {
 			const dest = url.clone();
 			dest.pathname = '/';
 			dest.search = '';
 			return redirectSafe(dest);
 		}
-		// REWRITE : "/" -> "/admin", "/x" -> "/admin/x" (URL visible inchangée)
+		// Rewrite: "/" -> "/admin", "/x" -> "/admin/x" (URL visible inchangée)
 		const rewritePath = `/admin${isRootPath ? '' : pathname}`;
 		return NextResponse.rewrite(new URL(rewritePath + url.search, req.url));
 	}
@@ -67,10 +70,6 @@ const middleware = (req: NextRequest) => {
 	 * On the main domain (calendis.fr), if the user is authenticated and hits
 	 * public entry points (/ or /login), send them to /admin on the admin subdomain.
 	 */
-	if (isMainDomain && isAdminPath && hasSession) {
-		const rest = pathname.slice('/admin'.length) || '/';
-		return redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
-	}
 
 	// connecté: / ou /login -> racine d'admin.calendis.fr
 	if (isMainDomain && hasSession && (isRootPath || isLoginPath)) {

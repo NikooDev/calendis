@@ -113,12 +113,6 @@ class AuthService {
 		} catch {}
 	}
 
-	private static isOnLogin() {
-		if (typeof window === 'undefined') return false;
-		const p = window.location.pathname;
-		return p === '/login' || p.startsWith('/login?');
-	}
-
 	private static canonicalLoginURL(): string {
 		if (typeof window === 'undefined') return '/login';
 
@@ -126,7 +120,7 @@ class AuthService {
 		const isCalendis = hostname.toLowerCase().endsWith('calendis.fr');
 
 		if (isCalendis) {
-			return `${protocol}//calendis.fr/login`;
+			return `${protocol}//www.calendis.fr/login`;
 		}
 
 		return '/login';
