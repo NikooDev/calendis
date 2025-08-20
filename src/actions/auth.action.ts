@@ -1,5 +1,5 @@
 import { FirebaseError } from '@firebase/app';
-import { browserSessionPersistence, setPersistence, signInWithEmailAndPassword } from '@firebase/auth';
+import { signInWithEmailAndPassword } from '@firebase/auth';
 import { FirebaseErrorEnum } from '@Calendis/types/auth';
 import FirebaseService from '@Calendis/services/firebase.service';
 
@@ -9,7 +9,6 @@ export const signIn = async (email: string, password: string) => {
 	const passwordSanitize = password.trim();
 
 	try {
-		await setPersistence(auth, browserSessionPersistence);
 		const userCredential = await signInWithEmailAndPassword(auth, emailSanitize, passwordSanitize);
 
 		return {
