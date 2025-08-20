@@ -12,6 +12,8 @@ class AuthService {
 	private static focusCheckInFlight: Promise<boolean> | null = null;
 
 	private static async checkOnFocus(auth: Auth) {
+		console.log('focus');
+
 		if (this.focusCheckInFlight) {
 			await this.focusCheckInFlight;
 			return;
