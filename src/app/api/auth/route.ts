@@ -107,6 +107,38 @@ export const DELETE = async () => {
 		} catch {}
 	}
 
-	authCookie.delete(COOKIE_NAME);
-	return new Response(null, { status: 204 });
+	const isHttps = process.env.NODE_ENV === 'production';
+	const domain = process.env.NODE_ENV === 'production' ? '.calendis.fr' : undefined;
+
+	const paths = ['/', '/admin', '/login'];
+
+	for (const p of paths) {
+		authCookie.set(COOKIE_NAME, '', {
+			path: p,
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: isHttps,
+			maxAge: 0,
+		});
+	}
+
+	if (domain) {
+		for (const p of paths) {
+			authCookie.set(COOKIE_NAME, '', {
+				path: p,
+				domain,
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: isHttps,
+				maxAge: 0,
+			});
+		}
+	}
+
+	const headers = {
+		'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+		'Pragma': 'no-cache',
+	};
+
+	return new Response(null, { status: 204, headers });
 }

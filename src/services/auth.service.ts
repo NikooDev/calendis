@@ -211,7 +211,9 @@ class AuthService {
 			try {
 				await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
 			} catch {}
-			try { await signOut(auth); } catch (error) {
+			try {
+				await signOut(auth);
+			} catch (error) {
 				if ((error instanceof FirebaseError)) {
 					console.warn('[AuthService:hardLogout] signOut failed:', error.code);
 				} else {
