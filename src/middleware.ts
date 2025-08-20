@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { parseJwt, purgeSessionCookie, verifyFirebaseSessionJWT } from '@Calendis/utils/functions-edge.util';
+import { NextResponse } from 'next/server';
+import { purgeSessionCookie, verifyFirebaseSessionCookie } from '@Calendis/utils/functions-edge.util';
 
 /**
  * Global middleware that orchestrates cross-subdomain auth routing.
@@ -34,31 +34,14 @@ export const middleware = async (req: NextRequest) => {
 
 	const raw = req.cookies.get('user')?.value;
 	const envPid = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
-	const vr = raw ? await verifyFirebaseSessionJWT(raw, envPid) : { ok: false, reason: 'missing' as const };
+	const vr = raw ? await verifyFirebaseSessionCookie(raw, envPid) : { ok: false, reason: 'missing' as const };
 	const looksValid = vr.ok;
-
-	const DEBUG_EDGE = process.env.NEXT_PUBLIC_DEBUG_EDGE === '1';
-
-	function addDebug(res: NextResponse, host: string, path: string, vr: { ok: boolean; reason?: string }, raw?: string) {
-		if (!DEBUG_EDGE) return;
-		res.headers.set('x-auth-edge', vr.ok ? 'ok' : `bad:${vr.reason ?? 'unknown'}`);
-		res.headers.set('x-auth-host', host);
-		res.headers.set('x-auth-path', path);
-		if (raw) {
-			const parsed = parseJwt(raw);
-			if (parsed?.header?.kid) res.headers.set('x-auth-kid', String(parsed.header.kid).slice(0, 8));
-			if (parsed?.payload?.aud) res.headers.set('x-auth-aud', String(parsed.payload.aud));
-			if (parsed?.payload?.iss) res.headers.set('x-auth-iss', String(parsed.payload.iss));
-			if (parsed?.payload?.exp) res.headers.set('x-auth-exp', String(parsed.payload.exp));
-		}
-	}
 
 	/* ===================== PRODUCTION: admin.calendis.fr ===================== */
 
 	// Invité sur admin.* → login public (+ purge)
 	if (isAdminDomain && !looksValid) {
 		const res = NextResponse.redirect(publicLogin);
-		addDebug(res, hostname, pathname, vr, raw);
 		purgeSessionCookie(res, isHttps, hostname, pathname);
 		return res;
 	}
@@ -68,32 +51,25 @@ export const middleware = async (req: NextRequest) => {
 		const dest = url.clone();
 		dest.pathname = '/';
 		dest.search = '';
-		const res = redirectSafe(dest);
-		addDebug(res, hostname, pathname, vr, raw);
-		return res;
+		return redirectSafe(dest);
 	}
 
 	// Authentifié sur admin.* → rewrite de "/" -> "/admin" et "/x" -> "/admin/x"
 	if (isAdminDomain && looksValid) {
 		const rewritePath = `/admin${isRootPath ? '' : pathname}`;
-		const res = NextResponse.rewrite(new URL(rewritePath + url.search, req.url));
-		addDebug(res, hostname, pathname, vr, raw);
-		return res;
+		return NextResponse.rewrite(new URL(rewritePath + url.search, req.url));
 	}
 
 	/* ===================== PRODUCTION: calendis.fr / www.calendis.fr ===================== */
 
 	// Pas de cookie + invité qui cible /admin* → login public
 	if (isMainDomain && !raw && !looksValid && isAdminPath) {
-		const res = NextResponse.redirect(publicLogin);
-		addDebug(res, hostname, pathname, vr, raw); // vr.reason devrait être "missing"
-		return res;
+		return NextResponse.redirect(publicLogin);
 	}
 
 	// Cookie présent mais invalide (bidon/expiré). On purge et on applique la règle invité
 	if (isMainDomain && raw && !looksValid) {
 		const res = isAdminPath ? NextResponse.redirect(publicLogin) : NextResponse.next();
-		addDebug(res, hostname, pathname, vr, raw);
 		purgeSessionCookie(res, isHttps, hostname, pathname);
 		return res;
 	}
@@ -101,16 +77,12 @@ export const middleware = async (req: NextRequest) => {
 	// Authentifié sur le domaine principal et demande /admin* → bascule vers admin.calendis.fr (on retire /admin)
 	if (isMainDomain && looksValid && isAdminPath) {
 		const rest = pathname.slice('/admin'.length) || '/';
-		const res = redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
-		addDebug(res, hostname, pathname, vr, raw);
-		return res;
+		return redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
 	}
 
 	// Authentifié sur le domaine principal et demande / ou /login → racine admin.calendis.fr
 	if (isMainDomain && looksValid && (isRootPath || isLoginPath)) {
-		const res = redirectSafe(new URL('/', 'https://admin.calendis.fr'));
-		addDebug(res, hostname, pathname, vr, raw);
-		return res;
+		return redirectSafe(new URL('/', 'https://admin.calendis.fr'));
 	}
 
 	/* ===================== LOCALHOST / PREVIEW (pas *.calendis.fr) ===================== */
