@@ -8,7 +8,13 @@ const AuthListener = () => {
 	const pathname = usePathname();
 
 	useEffect(() => {
-		if (!pathname.startsWith('/admin')) return;
+		const host = window.location.hostname.toLowerCase();
+		const isAdminDomain = host === 'admin.calendis.fr';
+		const isLocalhost = host === 'localhost' || host.startsWith('127.') || host === '::1';
+		const shouldRun = isAdminDomain || (isLocalhost && pathname.startsWith('/admin'));
+
+		if (!shouldRun) return;
+
 		AuthService.startAuthListener();
 
 		return () => {
