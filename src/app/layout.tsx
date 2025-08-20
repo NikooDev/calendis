@@ -13,7 +13,7 @@ import Navprogress from '@Calendis/components/layout/navprogress';
 import '@Calendis/assets/theme/globals.css';
 import '@Calendis/assets/theme/tooltip.css';
 
-export const metadata: Metadata = metadatas('Calendis', 'La planification connectée des tournées de calendriers');
+export const metadata: Metadata = metadatas('Calendis', 'L\'application unique pour planifier la distribution du calendrier, gérer vos événements et suivre la vie de l’amicale.');
 
 const rootLayout = ({ children }: Readonly<IChildren>) => {
 	return (

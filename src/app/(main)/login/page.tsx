@@ -5,7 +5,7 @@ import Login from '@Calendis/components/pages/login/login';
 import type { Metadata } from 'next';
 import { metadatas } from '@Calendis/utils/constants.util';
 
-export const metadata: Metadata = metadatas('Calendis • Connexion', 'La planification connectée des tournées de calendriers');
+export const metadata: Metadata = metadatas('Calendis • Connexion', 'Connectez-vous à votre espace Calendis pour retrouver l’organisation de la tournée du calendrier, les prochains événements de l’amicale et toutes les informations utiles pour rester impliqué dans la vie de votre équipe.');
 
 const Page = () => {
 	return (
