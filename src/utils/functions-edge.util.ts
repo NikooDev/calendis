@@ -98,8 +98,8 @@ export async function verifyFirebaseSessionJWT(
 	if (header.alg !== 'RS256') return { ok: false, reason: 'alg' };
 	if (!header.kid) return { ok: false, reason: 'kid' };
 
-	// ✅ fallback: si env absent, on déduit depuis le payload
-	const projectId = projectIdFromEnv ?? (typeof payload.aud === 'string' ? payload.aud : undefined);
+	const pidFromToken = typeof payload.aud === 'string' ? payload.aud : undefined;
+	const projectId = pidFromToken ?? projectIdFromEnv;
 	if (!projectId) return { ok: false, reason: 'aud-missing' };
 
 	const iss = `https://session.firebase.google.com/${projectId}`;
@@ -123,7 +123,6 @@ export async function verifyFirebaseSessionJWT(
 	const sigBytes  = b64uToBytes(parts[2]);
 	const dataBytes = new TextEncoder().encode(signingInput);
 
-	// Passe des ArrayBuffer “propres” à WebCrypto pour éviter les warnings TS
 	const sigBuf  = sigBytes.slice().buffer;
 	const dataBuf = dataBytes.slice().buffer;
 
