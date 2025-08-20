@@ -1,10 +1,12 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
+import { Auth, initializeAuth } from 'firebase/auth';
+import { Firestore, getFirestore } from 'firebase/firestore';
 import firebaseConfig from '@Calendis/config/firebase.config';
+import { browserSessionPersistence } from '@firebase/auth';
 
 class FirebaseService {
 	public static app: FirebaseApp;
+
 
 	private static init() {
 		if (!this.app) {
@@ -15,7 +17,7 @@ class FirebaseService {
 	}
 
 	public static get auth(): Auth {
-		return getAuth(this.init());
+		return initializeAuth(this.init(), {persistence: [browserSessionPersistence]});
 	}
 
 	public static get db(): Firestore {
