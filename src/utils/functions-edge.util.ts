@@ -67,7 +67,7 @@ async function loadJwks(): Promise<
 		const m = /max-age=(\d+)/i.exec(cc);
 		const ttlMs = m ? parseInt(m[1], 10) * 1000 : 3600_000;
 
-		const json: any = await res.json();
+		const json = await res.json();
 		if (!json || !Array.isArray(json.keys)) {
 			return { ok: false, reason: 'jwks-json' };
 		}
@@ -119,6 +119,12 @@ export type VerifyResult =
 	| { ok: true; payload: JwtPayload }
 	| { ok: false; reason: string };
 
+function toArrayBuffer(u8: Uint8Array): ArrayBuffer {
+	const ab = new ArrayBuffer(u8.byteLength);
+	new Uint8Array(ab).set(u8);
+	return ab; // <- true ArrayBuffer
+}
+
 export async function verifyFirebaseSessionJWT(
 	token: string,
 	projectIdFromEnv?: string,
@@ -156,16 +162,27 @@ export async function verifyFirebaseSessionJWT(
 		const keyRes = await getKeyByKidDetailed(header.kid);
 		if (!keyRes.ok) return { ok: false, reason: keyRes.reason };
 
+		const key = keyRes.key;
+
 		const signingInput = `${parts[0]}.${parts[1]}`;
-		const sigBytes = b64uToBytes(parts[2]);
-		const dataBytes = new TextEncoder().encode(signingInput);
-		const sigBuf = sigBytes.slice().buffer;
-		const dataBuf = dataBytes.slice().buffer;
+
+		const sigRaw = b64uToBytes(parts[2]); // Uint8Array
+		const dataRaw = new TextEncoder().encode(signingInput);// Uint8Array
+
+		if (sigRaw.byteLength === 0) return { ok: false, reason: 'sig-empty' };
+
+		const sigBuf: ArrayBuffer  = toArrayBuffer(sigRaw);
+		const dataBuf: ArrayBuffer = toArrayBuffer(dataRaw);
+
+		const keyAlg = key?.algorithm?.name;
+		if (keyAlg !== 'RSASSA-PKCS1-v1_5') {
+			return { ok: false, reason: `key-alg-${String(keyAlg || 'unknown')}` };
+		}
 
 		try {
 			const valid = await crypto.subtle.verify(
 				{ name: 'RSASSA-PKCS1-v1_5' },
-				keyRes.key,
+				key,
 				sigBuf,
 				dataBuf,
 			);
