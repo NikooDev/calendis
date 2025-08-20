@@ -13,6 +13,24 @@ class AuthService {
 	private static lastFocusCheck = 0;
 	private static readonly MIN_FOCUS_INTERVAL = 500;
 
+	private static inAdminContext(): boolean {
+		if (typeof window === 'undefined') return false;
+
+		const host = window.location.hostname.toLowerCase();
+		const path = window.location.pathname;
+
+		const isAdminDomain = host === 'admin.calendis.fr';
+		const isLocalLike =
+			host === 'localhost' ||
+			host.startsWith('127.') ||
+			host === '::1' ||
+			host.endsWith('.vercel.app');
+
+		if (isAdminDomain) return true;
+
+		return isLocalLike && path.startsWith('/admin');
+	}
+
 	private static async checkOnFocus(auth: Auth) {
 		const now = Date.now();
 		if (now - this.lastFocusCheck < this.MIN_FOCUS_INTERVAL) return;
@@ -42,6 +60,7 @@ class AuthService {
 
 	public static startAuthListener(): void {
 		if (typeof window === 'undefined') return;
+		if (!this.inAdminContext()) return;
 		if (this.listenerStarted && this.unsubscribeFn) return;
 
 		this.listenerStarted = true;

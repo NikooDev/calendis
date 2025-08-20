@@ -8,7 +8,6 @@ const AuthListener = () => {
 	const pathname = usePathname();
 
 	useEffect(() => {
-		if (!pathname.startsWith('/admin')) return;
 		AuthService.startAuthListener();
 
 		return () => {
