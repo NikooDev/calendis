@@ -32,8 +32,7 @@ export function parseJwt(token: string): { header: JwtHeader; payload: JwtPayloa
 
 /** ---------- JWKS (Google Secure Token) ---------- */
 
-const JWKS_URL =
-	'https://www.googleapis.com/robot/v1/metadata/jwk/securetoken@system.gserviceaccount.com';
+const JWKS_URL = 'https://identitytoolkit.googleapis.com/v1/sessionCookiePublicKeys';
 
 type Jwk = { kid: string; kty: 'RSA'; alg: 'RS256'; n: string; e: string; use?: 'sig' };
 
