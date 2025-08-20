@@ -1,5 +1,5 @@
 import FirebaseService from '@Calendis/services/firebase.service';
-import { type Auth, type User, signOut, onIdTokenChanged } from '@firebase/auth';
+import { type Auth, type User, signOut, onIdTokenChanged, signInWithCustomToken } from '@firebase/auth';
 import store from '@Calendis/store';
 import { setLoginError, setLoginSuccess, setLogout } from '@Calendis/store/reducers/auth.reducer';
 import { resetStore } from '@Calendis/store/reducers';
@@ -9,6 +9,8 @@ class AuthService {
 	private static listenerStarted = false;
 	private static unsubscribeFn: (() => void) | null = null;
 	private static loggingOut = false;
+	private static bootstrapTried = false;
+	private static bootstrapInFlight: Promise<void> | null = null;
 	private static focusCheckInFlight: Promise<boolean> | null = null;
 	private static lastFocusCheck = 0;
 	private static readonly MIN_FOCUS_INTERVAL = 500;
@@ -29,6 +31,28 @@ class AuthService {
 		if (isAdminDomain) return true;
 
 		return isLocalLike && path.startsWith('/admin');
+	}
+
+	private static async bootstrapAuth(auth: Auth): Promise<void> {
+		if (this.bootstrapInFlight) return this.bootstrapInFlight;
+		this.bootstrapInFlight = (async () => {
+			try {
+				const r = await fetch('/api/auth/custom-token?ts=' + Date.now(), {
+					method: 'POST',
+					credentials: 'include',
+					cache: 'no-store',
+					headers: { 'Cache-Control': 'no-store' }
+				});
+
+				if (!r.ok) return;
+
+				const { token } = await r.json();
+				await signInWithCustomToken(auth, token);
+			} catch {}
+		})().finally(() => {
+			this.bootstrapInFlight = null;
+		});
+		await this.bootstrapInFlight;
 	}
 
 	private static async checkOnFocus(auth: Auth) {
@@ -82,10 +106,18 @@ class AuthService {
 			async (user: User | null) => {
 				try {
 					if (!user) {
-						await this.hardLogout(auth);
+						if (this.inAdminContext() && !this.bootstrapTried) {
+							this.bootstrapTried = true;
+							await this.bootstrapAuth(auth);
+							return;
+						}
+
+						const ok = await this.checkAuth();
+						if (!ok) await this.hardLogout(auth);
 						return;
 					}
 
+					this.bootstrapTried = false;
 					Store.dispatch(setLoginSuccess());
 					//const profile = await getUserProfileFromFirestore(user.uid);
 					//store.dispatch(setUserProfile({ uid: user.uid, email: user.email!, ...profile }));
@@ -130,12 +162,6 @@ class AuthService {
 		}
 	}
 
-	private static async serverLogout() {
-		try {
-			await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
-		} catch {}
-	}
-
 	private static canonicalLoginURL(): string {
 		if (typeof window === 'undefined') return '/login';
 
@@ -177,7 +203,9 @@ class AuthService {
 		this.loggingOut = true;
 
 		try {
-			await this.serverLogout();
+			try {
+				await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
+			} catch {}
 			try { await signOut(auth); } catch (error) {
 				if ((error instanceof FirebaseError)) {
 					console.warn('[AuthService:hardLogout] signOut failed:', error.code);
