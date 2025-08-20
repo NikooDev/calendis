@@ -10,13 +10,8 @@ class AuthService {
 	private static unsubscribeFn: (() => void) | null = null;
 	private static loggingOut = false;
 	private static focusCheckInFlight: Promise<boolean> | null = null;
-	private static lastFocusCheck = 0;
-	private static readonly MIN_FOCUS_INTERVAL = 500;
 
 	private static async checkOnFocus(auth: Auth) {
-		const now = Date.now();
-		if (now - this.lastFocusCheck < this.MIN_FOCUS_INTERVAL) return;
-
 		if (this.focusCheckInFlight) {
 			await this.focusCheckInFlight;
 			return;
@@ -25,14 +20,9 @@ class AuthService {
 		if (!navigator.onLine) return;
 
 		this.focusCheckInFlight = (async () => {
-			const status = await this.checkAuth();
-			this.lastFocusCheck = Date.now();
-
-			if (!status) {
-				await this.hardLogout(auth);
-			}
-
-			return status;
+			const ok = await this.checkAuth();
+			if (!ok) await this.hardLogout(auth);
+			return ok;
 		})().finally(() => {
 			this.focusCheckInFlight = null;
 		});
