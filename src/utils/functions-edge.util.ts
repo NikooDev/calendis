@@ -34,16 +34,24 @@ export function parseJwt(token: string): { header: JwtHeader; payload: JwtPayloa
 
 const JWKS_URL = 'https://identitytoolkit.googleapis.com/v1/sessionCookiePublicKeys';
 
-type Jwk = { kid: string; kty: 'RSA'; alg: 'RS256'; n: string; e: string; use?: 'sig' };
+type Jwk = {
+	kid: string;
+	kty: 'RSA';
+	n: string;
+	e: string;
+	alg?: 'RS256';
+	use?: 'sig';
+};
 
-let jwksCache:
-	| { keys: Record<string, CryptoKey>; exp: number }
-	| null = null;
+let jwksCache: { keys: Record<string, CryptoKey>; exp: number } | null = null;
 
 export async function importRsaKeyFromJwk(jwk: Jwk): Promise<CryptoKey> {
+	// On donne à WebCrypto uniquement les champs JWK obligatoires
+	const jwkMinimal = { kty: 'RSA', n: jwk.n, e: jwk.e, ext: true } as JsonWebKey;
+
 	return crypto.subtle.importKey(
 		'jwk',
-		{ kty: 'RSA', e: jwk.e, n: jwk.n, alg: 'RS256', ext: true, key_ops: ['verify'] },
+		jwkMinimal,
 		{ name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
 		false,
 		['verify'],
@@ -51,30 +59,39 @@ export async function importRsaKeyFromJwk(jwk: Jwk): Promise<CryptoKey> {
 }
 
 export async function getKeyByKid(kid: string): Promise<CryptoKey | null> {
-	const now = Date.now();
-	if (jwksCache && jwksCache.exp > now && jwksCache.keys[kid]) {
-		return jwksCache.keys[kid];
-	}
+	try {
+		const now = Date.now();
+		if (jwksCache && jwksCache.exp > now && jwksCache.keys[kid]) {
+			return jwksCache.keys[kid];
+		}
 
-	const res = await fetch(JWKS_URL, { cache: 'no-store' });
-	if (!res.ok) return null;
+		const res = await fetch(JWKS_URL, { cache: 'no-store' });
+		if (!res.ok) return null;
 
-	const cc = res.headers.get('cache-control') || '';
-	const m = /max-age=(\d+)/i.exec(cc);
-	const ttlMs = m ? parseInt(m[1], 10) * 1000 : 3600_000;
+		const cc = res.headers.get('cache-control') || '';
+		const m = /max-age=(\d+)/i.exec(cc);
+		const ttlMs = m ? parseInt(m[1], 10) * 1000 : 3600_000;
 
-	const { keys } = (await res.json()) as { keys: Jwk[] };
-	const map: Record<string, CryptoKey> = {};
-	await Promise.allSettled(
-		keys.map(async (k) => {
-			if (k.kty === 'RSA' && k.alg === 'RS256' && k.kid) {
+		const json: unknown = await res.json();
+		// L’endpoint v1 renvoie bien { keys: Jwk[] }
+		const arr = Array.isArray((json as any)?.keys) ? ((json as any).keys as Jwk[]) : null;
+		if (!arr) return null;
+
+		const map: Record<string, CryptoKey> = {};
+		for (const k of arr) {
+			if (!k?.kid || k.kty !== 'RSA' || !k.n || !k.e) continue;
+			try {
 				map[k.kid] = await importRsaKeyFromJwk(k);
+			} catch {
+				// ignore une clé défectueuse, continue
 			}
-		}),
-	);
+		}
 
-	jwksCache = { keys: map, exp: now + ttlMs };
-	return jwksCache.keys[kid] ?? null;
+		jwksCache = { keys: map, exp: now + ttlMs };
+		return jwksCache.keys[kid] ?? null;
+	} catch {
+		return null;
+	}
 }
 
 /** ---------- Vérification RS256 du Firebase Session Cookie ---------- */
@@ -87,53 +104,60 @@ export async function verifyFirebaseSessionJWT(
 	token: string,
 	projectIdFromEnv?: string,
 ): Promise<VerifyResult> {
-	const parts = token.split('.');
-	if (parts.length !== 3) return { ok: false, reason: 'shape' };
+	try {
+		const parts = token.split('.');
+		if (parts.length !== 3) return { ok: false, reason: 'shape' };
 
-	const parsed = parseJwt(token);
-	if (!parsed) return { ok: false, reason: 'decode' };
-	const { header, payload } = parsed;
+		const parsed = parseJwt(token);
+		if (!parsed) return { ok: false, reason: 'decode' };
+		const { header, payload } = parsed;
 
-	if (header.alg !== 'RS256') return { ok: false, reason: 'alg' };
-	if (!header.kid) return { ok: false, reason: 'kid' };
+		if (header.alg !== 'RS256') return { ok: false, reason: 'alg' };
+		if (!header.kid) return { ok: false, reason: 'kid' };
 
-	const pidFromToken = typeof payload.aud === 'string' ? payload.aud : undefined;
-	const projectId = pidFromToken ?? projectIdFromEnv;
-	if (!projectId) return { ok: false, reason: 'aud-missing' };
+		// 🔁 Priorité au projectId issu du token (aud), fallback env
+		const pidFromToken = typeof payload.aud === 'string' ? payload.aud : undefined;
+		const projectId = pidFromToken ?? projectIdFromEnv;
+		if (!projectId) return { ok: false, reason: 'aud-missing' };
 
-	const iss = `https://session.firebase.google.com/${projectId}`;
-	if (payload.iss !== iss) return { ok: false, reason: 'iss' };
-	if (payload.aud !== projectId) return { ok: false, reason: 'aud' };
-	if (!payload.sub) return { ok: false, reason: 'sub' };
+		const iss = `https://session.firebase.google.com/${projectId}`;
+		if (payload.iss !== iss) return { ok: false, reason: 'iss' };
+		if (payload.aud !== projectId) return { ok: false, reason: 'aud' };
+		if (!payload.sub) return { ok: false, reason: 'sub' };
 
-	const now = Math.floor(Date.now() / 1000);
-	const leeway = 60;
-	if (typeof payload.exp !== 'number' || payload.exp <= now - leeway) {
-		return { ok: false, reason: 'exp' };
+		const now = Math.floor(Date.now() / 1000);
+		const leeway = 60;
+		if (typeof payload.exp !== 'number' || payload.exp <= now - leeway) {
+			return { ok: false, reason: 'exp' };
+		}
+		if (typeof payload.nbf === 'number' && payload.nbf > now + leeway) {
+			return { ok: false, reason: 'nbf' };
+		}
+
+		const key = await getKeyByKid(header.kid);
+		if (!key) return { ok: false, reason: 'key' };
+
+		const signingInput = `${parts[0]}.${parts[1]}`;
+		const sigBytes = b64uToBytes(parts[2]);
+		const dataBytes = new TextEncoder().encode(signingInput);
+
+		// Passe des ArrayBuffer “propres”
+		const sigBuf = sigBytes.slice().buffer;
+		const dataBuf = dataBytes.slice().buffer;
+
+		const valid = await crypto.subtle.verify(
+			{ name: 'RSASSA-PKCS1-v1_5' },
+			key,
+			sigBuf,
+			dataBuf,
+		);
+		if (!valid) return { ok: false, reason: 'signature' };
+
+		return { ok: true, payload };
+	} catch {
+		// Ne jamais faire planter le middleware
+		return { ok: false, reason: 'exception' };
 	}
-	if (typeof payload.nbf === 'number' && payload.nbf > now + leeway) {
-		return { ok: false, reason: 'nbf' };
-	}
-
-	const key = await getKeyByKid(header.kid);
-	if (!key) return { ok: false, reason: 'key' };
-
-	const signingInput = `${parts[0]}.${parts[1]}`;
-	const sigBytes  = b64uToBytes(parts[2]);
-	const dataBytes = new TextEncoder().encode(signingInput);
-
-	const sigBuf  = sigBytes.slice().buffer;
-	const dataBuf = dataBytes.slice().buffer;
-
-	const valid = await crypto.subtle.verify(
-		{ name: 'RSASSA-PKCS1-v1_5' },
-		key,
-		sigBuf,
-		dataBuf,
-	);
-	if (!valid) return { ok: false, reason: 'signature' };
-
-	return { ok: true, payload };
 }
 
 /** ---------- Cookies helpers ---------- */
