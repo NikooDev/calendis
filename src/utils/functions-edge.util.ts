@@ -3,7 +3,6 @@ import type { NextResponse } from 'next/server';
 /** ---------- base64url + JWT helpers (Edge-safe) ---------- */
 
 export function b64uToBytes(b64u: string): Uint8Array {
-	// Edge (middleware) expose atob / TextDecoder. Aucune dépendance Node.
 	const pad = '='.repeat((4 - (b64u.length % 4)) % 4);
 	const s = (b64u + pad).replace(/-/g, '+').replace(/_/g, '/');
 	const bin = atob(s);
@@ -30,8 +29,7 @@ export function parseJwt(token: string): { header: JwtHeader; payload: JwtPayloa
 	}
 }
 
-/** ---------- JWKS (Google Secure Token) ---------- */
-
+/** ---------- JWKS (Identity Toolkit v1, pour Session Cookies) ---------- */
 const JWKS_URL = 'https://identitytoolkit.googleapis.com/v1/sessionCookiePublicKeys';
 
 type Jwk = {
@@ -43,12 +41,11 @@ type Jwk = {
 	use?: 'sig';
 };
 
-let jwksCache: { keys: Record<string, CryptoKey>; exp: number } | null = null;
+let jwksCache: { keys: Record<string, CryptoKey>; exp: number; kids: string[] } | null = null;
 
-export async function importRsaKeyFromJwk(jwk: Jwk): Promise<CryptoKey> {
-	// On donne à WebCrypto uniquement les champs JWK obligatoires
-	const jwkMinimal = { kty: 'RSA', n: jwk.n, e: jwk.e, ext: true } as JsonWebKey;
-
+async function importRsaKeyFromJwk(jwk: Jwk): Promise<CryptoKey> {
+	// JWK minimal (évite les soucis d’import avec certains champs)
+	const jwkMinimal: JsonWebKey = { kty: 'RSA', n: jwk.n, e: jwk.e, ext: true };
 	return crypto.subtle.importKey(
 		'jwk',
 		jwkMinimal,
@@ -58,44 +55,66 @@ export async function importRsaKeyFromJwk(jwk: Jwk): Promise<CryptoKey> {
 	);
 }
 
-export async function getKeyByKid(kid: string): Promise<CryptoKey | null> {
+async function loadJwks(): Promise<
+	| { ok: true; map: Record<string, CryptoKey>; kids: string[]; ttlMs: number }
+	| { ok: false; reason: 'jwks-fetch' | 'jwks-json' }
+> {
 	try {
-		const now = Date.now();
-		if (jwksCache && jwksCache.exp > now && jwksCache.keys[kid]) {
-			return jwksCache.keys[kid];
-		}
-
 		const res = await fetch(JWKS_URL, { cache: 'no-store' });
-		if (!res.ok) return null;
+		if (!res.ok) return { ok: false, reason: 'jwks-fetch' };
 
 		const cc = res.headers.get('cache-control') || '';
 		const m = /max-age=(\d+)/i.exec(cc);
 		const ttlMs = m ? parseInt(m[1], 10) * 1000 : 3600_000;
 
-		const json: unknown = await res.json();
-		// L’endpoint v1 renvoie bien { keys: Jwk[] }
-		const arr = Array.isArray((json as any)?.keys) ? ((json as any).keys as Jwk[]) : null;
-		if (!arr) return null;
+		const json: any = await res.json();
+		if (!json || !Array.isArray(json.keys)) {
+			return { ok: false, reason: 'jwks-json' };
+		}
 
+		const kids: string[] = [];
 		const map: Record<string, CryptoKey> = {};
-		for (const k of arr) {
+		for (const k of json.keys as Jwk[]) {
 			if (!k?.kid || k.kty !== 'RSA' || !k.n || !k.e) continue;
+			kids.push(k.kid);
 			try {
 				map[k.kid] = await importRsaKeyFromJwk(k);
 			} catch {
-				// ignore une clé défectueuse, continue
+				// on ignore la clé fautive, on continue
 			}
 		}
-
-		jwksCache = { keys: map, exp: now + ttlMs };
-		return jwksCache.keys[kid] ?? null;
+		return { ok: true, map, kids, ttlMs };
 	} catch {
-		return null;
+		return { ok: false, reason: 'jwks-fetch' };
 	}
 }
 
-/** ---------- Vérification RS256 du Firebase Session Cookie ---------- */
+async function getKeyByKidDetailed(kid: string): Promise<
+	| { ok: true; key: CryptoKey; kids: string[] }
+	| { ok: false; reason: 'jwks-fetch' | 'jwks-json' | 'kid-miss'; kids?: string[] }
+> {
+	const now = Date.now();
+	if (jwksCache && jwksCache.exp > now) {
+		const k = jwksCache.keys[kid];
+		if (k) return { ok: true, key: k, kids: jwksCache.kids };
+		return { ok: false, reason: 'kid-miss', kids: jwksCache.kids };
+	}
 
+	const loaded = await loadJwks();
+	if (!loaded.ok) return loaded;
+
+	jwksCache = {
+		keys: loaded.map,
+		kids: loaded.kids,
+		exp: now + loaded.ttlMs,
+	};
+
+	const key = jwksCache.keys[kid];
+	if (!key) return { ok: false, reason: 'kid-miss', kids: jwksCache.kids };
+	return { ok: true, key, kids: jwksCache.kids };
+}
+
+/** ---------- Vérification RS256 du Firebase Session Cookie ---------- */
 export type VerifyResult =
 	| { ok: true; payload: JwtPayload }
 	| { ok: false; reason: string };
@@ -115,7 +134,7 @@ export async function verifyFirebaseSessionJWT(
 		if (header.alg !== 'RS256') return { ok: false, reason: 'alg' };
 		if (!header.kid) return { ok: false, reason: 'kid' };
 
-		// 🔁 Priorité au projectId issu du token (aud), fallback env
+		// priorité au projectId issu du token (aud), fallback env
 		const pidFromToken = typeof payload.aud === 'string' ? payload.aud : undefined;
 		const projectId = pidFromToken ?? projectIdFromEnv;
 		if (!projectId) return { ok: false, reason: 'aud-missing' };
@@ -134,36 +153,35 @@ export async function verifyFirebaseSessionJWT(
 			return { ok: false, reason: 'nbf' };
 		}
 
-		const key = await getKeyByKid(header.kid);
-		if (!key) return { ok: false, reason: 'key' };
+		const keyRes = await getKeyByKidDetailed(header.kid);
+		if (!keyRes.ok) return { ok: false, reason: keyRes.reason };
 
 		const signingInput = `${parts[0]}.${parts[1]}`;
 		const sigBytes = b64uToBytes(parts[2]);
 		const dataBytes = new TextEncoder().encode(signingInput);
-
-		// Passe des ArrayBuffer “propres”
 		const sigBuf = sigBytes.slice().buffer;
 		const dataBuf = dataBytes.slice().buffer;
 
-		const valid = await crypto.subtle.verify(
-			{ name: 'RSASSA-PKCS1-v1_5' },
-			key,
-			sigBuf,
-			dataBuf,
-		);
-		if (!valid) return { ok: false, reason: 'signature' };
+		try {
+			const valid = await crypto.subtle.verify(
+				{ name: 'RSASSA-PKCS1-v1_5' },
+				keyRes.key,
+				sigBuf,
+				dataBuf,
+			);
+			if (!valid) return { ok: false, reason: 'signature' };
+		} catch {
+			return { ok: false, reason: 'verify-ex' };
+		}
 
 		return { ok: true, payload };
 	} catch {
-		// Ne jamais faire planter le middleware
 		return { ok: false, reason: 'exception' };
 	}
 }
 
 /** ---------- Cookies helpers ---------- */
-
 function buildPathCandidates(currentPath: string): string[] {
-	// '/admin/a/b' -> ['/admin/a/b','/admin/a','/admin','/']
 	const parts = currentPath.split('/').filter(Boolean);
 	const paths: string[] = ['/'];
 	let acc = '';
@@ -171,7 +189,6 @@ function buildPathCandidates(currentPath: string): string[] {
 		acc += `/${p}`;
 		paths.push(acc);
 	}
-	// supprime les doublons et trie du plus long au plus court
 	return Array.from(new Set(paths)).sort((a, b) => b.length - a.length);
 }
 
@@ -182,8 +199,6 @@ export function purgeSessionCookie(
 	currentPath: string = '/'
 ) {
 	const candidates = buildPathCandidates(currentPath);
-
-	// Cookie partagé entre sous-domaines (prod)
 	if (hostname.endsWith('calendis.fr')) {
 		for (const path of candidates) {
 			res.cookies.set('user', '', {
@@ -196,8 +211,6 @@ export function purgeSessionCookie(
 			});
 		}
 	}
-
-	// Variante host-only (au cas où elle existerait)
 	for (const path of candidates) {
 		res.cookies.set('user', '', {
 			path,
