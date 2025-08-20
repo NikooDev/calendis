@@ -76,7 +76,7 @@ export function purgeSessionCookie(
 				httpOnly: true,
 				sameSite: 'lax',
 				secure: isHttps,
-				maxAge: 0, // expire now
+				maxAge: 0
 			});
 		}
 	}
@@ -87,7 +87,7 @@ export function purgeSessionCookie(
 			httpOnly: true,
 			sameSite: 'lax',
 			secure: isHttps,
-			maxAge: 0,
+			maxAge: 0
 		});
 	}
 }

@@ -4,7 +4,6 @@ import store from '@Calendis/store';
 import { setLoginError, setLoginSuccess, setLogout } from '@Calendis/store/reducers/auth.reducer';
 import { resetStore } from '@Calendis/store/reducers';
 import { FirebaseError } from '@firebase/app';
-import { idbHasAuthUserEntry } from '@Calendis/utils/functions-client.util';
 
 class AuthService {
 	private static listenerStarted = false;
@@ -32,10 +31,6 @@ class AuthService {
 		if (isAdminDomain) return true;
 
 		return isLocalLike && path.startsWith('/admin');
-	}
-
-	private static get apiKey(): string {
-		return FirebaseService.app?.options?.apiKey || process.env.NEXT_PUBLIC_FIREBASE_API_KEY!;
 	}
 
 	private static async bootstrapAuth(auth: Auth): Promise<void> {
@@ -72,14 +67,14 @@ class AuthService {
 		if (!navigator.onLine) return;
 
 		this.focusCheckInFlight = (async () => {
-			const serverOk = await this.checkAuth();
-			if (!serverOk) { await this.hardLogout(auth); return false; }
-
-			const hasLocalAuth = await idbHasAuthUserEntry(this.apiKey);
-			if (!hasLocalAuth) { await this.hardLogout(auth); return false; }
-
+			const status = await this.checkAuth();
 			this.lastFocusCheck = Date.now();
-			return true;
+
+			if (!status) {
+				await this.hardLogout(auth);
+			}
+
+			return status;
 		})().finally(() => {
 			this.focusCheckInFlight = null;
 		});
@@ -211,9 +206,7 @@ class AuthService {
 			try {
 				await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
 			} catch {}
-			try {
-				await signOut(auth);
-			} catch (error) {
+			try { await signOut(auth); } catch (error) {
 				if ((error instanceof FirebaseError)) {
 					console.warn('[AuthService:hardLogout] signOut failed:', error.code);
 				} else {
