@@ -11,7 +11,7 @@ class AuthService {
 	private static loggingOut = false;
 	private static focusCheckInFlight: Promise<boolean> | null = null;
 	private static lastFocusCheck = 0;
-	private static readonly MIN_FOCUS_INTERVAL = 1500;
+	private static readonly MIN_FOCUS_INTERVAL = 500;
 
 	private static async checkOnFocus(auth: Auth) {
 		const now = Date.now();
@@ -95,10 +95,14 @@ class AuthService {
 
 	private static async checkAuth(): Promise<boolean> {
 		try {
-			const res = await fetch('/api/auth', {
+			const res = await fetch(`/api/auth?ts=${Date.now()}`, {
 				method: 'GET',
 				credentials: 'include',
-				cache: 'no-store'
+				cache: 'no-store',
+				headers: {
+					'Cache-Control': 'no-store',
+					'Pragma': 'no-cache',
+				}
 			});
 
 			return res.ok;

@@ -80,6 +80,8 @@ sw.addEventListener('fetch', (event) => {
 		return;
 	}
 
+	if (url.pathname.startsWith('/api/')) return;
+
 	if (
 		url.pathname.startsWith('/_next/') ||
 		url.pathname.startsWith('/static/') ||

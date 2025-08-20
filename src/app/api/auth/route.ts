@@ -69,21 +69,25 @@ export const POST = async (req: NextRequest) => {
  * @constructor
  */
 export const GET = async () => {
+	const headers = {
+		'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+		'Pragma': 'no-cache',
+	};
+
 	const authCookie = await cookies();
 	const sessionCookie = authCookie.get(COOKIE_NAME)?.value;
 
 	if (!sessionCookie) {
-
 		return new Response(null, { status: 401 });
 	}
 
 	try {
 		const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
 
-		return Response.json(decoded);
+		return Response.json(decoded, { headers });
 	} catch {
 		authCookie.delete(COOKIE_NAME);
-		return new Response(null, { status: 401 });
+		return new Response(null, { status: 401, headers });
 	}
 }
 
