@@ -2,15 +2,6 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { purgeSessionCookie, verifyFirebaseSessionCookie } from '@Calendis/utils/functions-edge.util';
 
-/**
- * Global middleware that orchestrates cross-subdomain auth routing.
- *
- * Rules summary:
- * - On admin.calendis.fr: unauthenticated users are always redirected to https://calendis.fr/
- * - On admin.calendis.fr: authenticated users are normalized to /admin (no / or /login)
- * - On calendis.fr: when authenticated, /admin (or /, /login) should live on admin.calendis.fr
- * - On non-calendis hosts (localhost, previews): protect /admin → /login on same host
- */
 export const middleware = async (req: NextRequest) => {
 	const url = req.nextUrl;
 	const { pathname, protocol } = url;
@@ -37,16 +28,16 @@ export const middleware = async (req: NextRequest) => {
 	const vr = raw ? await verifyFirebaseSessionCookie(raw, envPid) : { ok: false, reason: 'missing' as const };
 	const looksValid = vr.ok;
 
-	/* ===================== PRODUCTION: admin.calendis.fr ===================== */
+	/**
+	 * admin.calendis.fr
+	 */
 
-	// Invité sur admin.* → login public (+ purge)
 	if (isAdminDomain && !looksValid) {
 		const res = NextResponse.redirect(publicLogin);
 		purgeSessionCookie(res, isHttps, hostname, pathname);
 		return res;
 	}
 
-	// Authentifié sur admin.* + /login → /
 	if (isAdminDomain && looksValid && isLoginPath) {
 		const dest = url.clone();
 		dest.pathname = '/';
@@ -54,38 +45,37 @@ export const middleware = async (req: NextRequest) => {
 		return redirectSafe(dest);
 	}
 
-	// Authentifié sur admin.* → rewrite de "/" -> "/admin" et "/x" -> "/admin/x"
 	if (isAdminDomain && looksValid) {
 		const rewritePath = `/admin${isRootPath ? '' : pathname}`;
 		return NextResponse.rewrite(new URL(rewritePath + url.search, req.url));
 	}
 
-	/* ===================== PRODUCTION: calendis.fr / www.calendis.fr ===================== */
+	/**
+	 * calendis.fr
+	 */
 
-	// Pas de cookie + invité qui cible /admin* → login public
 	if (isMainDomain && !raw && !looksValid && isAdminPath) {
 		return NextResponse.redirect(publicLogin);
 	}
 
-	// Cookie présent mais invalide (bidon/expiré). On purge et on applique la règle invité
 	if (isMainDomain && raw && !looksValid) {
 		const res = isAdminPath ? NextResponse.redirect(publicLogin) : NextResponse.next();
 		purgeSessionCookie(res, isHttps, hostname, pathname);
 		return res;
 	}
 
-	// Authentifié sur le domaine principal et demande /admin* → bascule vers admin.calendis.fr (on retire /admin)
 	if (isMainDomain && looksValid && isAdminPath) {
 		const rest = pathname.slice('/admin'.length) || '/';
 		return redirectSafe(new URL(rest + url.search, 'https://admin.calendis.fr'));
 	}
 
-	// Authentifié sur le domaine principal et demande / ou /login → racine admin.calendis.fr
 	if (isMainDomain && looksValid && (isRootPath || isLoginPath)) {
 		return redirectSafe(new URL('/', 'https://admin.calendis.fr'));
 	}
 
-	/* ===================== LOCALHOST / PREVIEW (pas *.calendis.fr) ===================== */
+	/**
+	 * localhost
+	 */
 
 	if (!isCalendis && isAdminPath && !looksValid) {
 		const dest = url.clone();
