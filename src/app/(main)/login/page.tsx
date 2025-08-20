@@ -2,6 +2,10 @@ import React from 'react';
 import Image from 'next/image';
 import SlideIn from '@Calendis/components/animations/slidein';
 import Login from '@Calendis/components/pages/login/login';
+import type { Metadata } from 'next';
+import { metadatas } from '@Calendis/utils/constants.util';
+
+export const metadata: Metadata = metadatas('Calendis • Connexion', 'La planification connectée des tournées de calendriers');
 
 const Page = () => {
 	return (

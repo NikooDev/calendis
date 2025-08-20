@@ -44,9 +44,9 @@ export const COOKIE_PREFIX = 'calendis';
 /**
  * Default metadata configuration for the application.
  */
-export const metadatas = {
-	title: 'Calendis',
-	description: 'La planification connectée des tournées de calendriers',
+export const metadatas = (title: string, description: string) => ({
+	title: title,
+	description: description,
 	icons: {
 		icon: [
 			{
@@ -61,4 +61,4 @@ export const metadatas = {
 		]
 	},
 	manifest: '/manifest.json'
-} as Metadata;
+}) as Metadata;
