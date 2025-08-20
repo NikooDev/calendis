@@ -109,7 +109,7 @@ export const middleware = async (req: NextRequest) => {
 
 export const config = {
 	matcher: [
-		'/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js|map)).*)',
+		'/', '/login', '/admin/:path*',
 	],
 };
 
