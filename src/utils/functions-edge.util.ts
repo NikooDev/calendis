@@ -175,20 +175,21 @@ export async function verifyFirebaseSessionJWT(
 		const dataBuf: ArrayBuffer = toArrayBuffer(dataRaw);
 
 		const keyAlg = key?.algorithm?.name;
+
 		if (keyAlg !== 'RSASSA-PKCS1-v1_5') {
 			return { ok: false, reason: `key-alg-${String(keyAlg || 'unknown')}` };
 		}
 
 		try {
 			const valid = await crypto.subtle.verify(
-				{ name: 'RSASSA-PKCS1-v1_5' },
+				'RSASSA-PKCS1-v1_5',
 				key,
 				sigBuf,
 				dataBuf,
 			);
 			if (!valid) return { ok: false, reason: 'signature' };
-		} catch {
-			return { ok: false, reason: 'verify-ex' };
+		} catch (e) {
+			return { ok: false, reason: `verify-ex:${(e as any)?.name || 'err'}` };
 		}
 
 		return { ok: true, payload };
